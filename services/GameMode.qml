@@ -24,9 +24,6 @@ Singleton {
     property bool active: _manualActive || _autoActive
     property bool autoDetect: Config.options?.gameMode?.autoDetect ?? true
     property bool manuallyActivated: _manualActive
-    
-    // Flag to suppress niri reload toast when we're the one triggering it
-    property bool _suppressNiriToast: false
 
     // Internal state
     property bool _manualActive: false
@@ -227,9 +224,6 @@ Singleton {
     function setNiriAnimations(enabled) {
         if (!controlNiriAnimations) return
         
-        // Set flag to suppress toast
-        root._suppressNiriToast = true
-        
         // Use sed to toggle "off" line in animations block
         niriAnimProcess.command = enabled
             ? ["bash", "-c", "sed -i '/^animations {/,/^}/ s/^\\([ \\t]*\\)off$/\\1\\/\\/off/' " + niriConfigPath + " && niri msg action reload-config"]
@@ -243,15 +237,7 @@ Singleton {
             if (code === 0) {
                 console.log("[GameMode] Niri animations updated")
             }
-            // Clear suppress flag after a delay (to catch the reload event)
-            suppressClearTimer.start()
         }
-    }
-    
-    Timer {
-        id: suppressClearTimer
-        interval: 500
-        onTriggered: root._suppressNiriToast = false
     }
 
     // Track last niri animation state to avoid redundant updates

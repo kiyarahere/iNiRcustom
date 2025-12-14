@@ -14,6 +14,15 @@ Scope {
     property int maxToasts: 5
     property int toastSpacing: 8
     
+    // Check if reload toasts should be shown - evaluated fresh each time
+    function shouldShowReloadToast(): bool {
+        // Global disable
+        if (!(Config.options?.reloadToasts?.enable ?? true)) return false
+        // GameMode suppression
+        if (GameMode.active && (Config.options?.gameMode?.disableReloadToasts ?? true)) return false
+        return true
+    }
+    
     function addToast(title, message, icon, isError, duration, source, accentColor) {
         // Prevent duplicates: remove existing toast from same source with same error state
         toasts = toasts.filter(t => !(t.source === source && t.isError === isError))
@@ -45,17 +54,13 @@ Scope {
             popupLoader.active = false
         }
     }
-    
-    // Check if reload toasts should be shown
-    readonly property bool reloadToastsEnabled: (Config.options?.reloadToasts?.enable ?? true) 
-        && !(GameMode.active && (Config.options?.gameMode?.disableReloadToasts ?? true))
 
     // Quickshell reload signals
     Connections {
         target: Quickshell
         
         function onReloadCompleted() {
-            if (!root.reloadToastsEnabled) return
+            if (!root.shouldShowReloadToast()) return
             root.addToast(
                 "Quickshell reloaded",
                 "",
@@ -87,8 +92,7 @@ Scope {
         
         function onConfigLoadFinished(ok, error) {
             if (ok) {
-                // Suppress toast if GameMode triggered the reload
-                if (!root.reloadToastsEnabled || GameMode._suppressNiriToast) return
+                if (!root.shouldShowReloadToast()) return
                 root.addToast(
                     "Niri config reloaded",
                     "",
