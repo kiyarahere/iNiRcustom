@@ -326,14 +326,20 @@ run_update() {
         fi
     fi
     
-    # Restart shell
+    # Restart shell (only if we have access to the session)
     echo ""
-    tui_info "Restarting shell..."
-    qs kill -c ii 2>/dev/null || true
-    sleep 1
-    nohup qs -c ii >/dev/null 2>&1 &
-    disown
-    tui_success "Shell restarted"
+    if [[ -n "$NIRI_SOCKET" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
+        tui_info "Restarting shell..."
+        qs kill -c ii 2>/dev/null || true
+        sleep 1
+        nohup qs -c ii >/dev/null 2>&1 &
+        disown
+        tui_success "Shell restarted"
+    else
+        tui_warn "Not in graphical session - shell restart skipped"
+        tui_info "The shell will use new files on next restart"
+        tui_info "Or run: qs kill -c ii && qs -c ii"
+    fi
     
     echo ""
     tui_subtitle "Tip: Run './setup rollback' if something breaks"

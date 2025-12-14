@@ -173,12 +173,17 @@ restore_snapshot() {
     local version=$(jq -r '.version_before // "unknown"' "$meta" 2>/dev/null || echo "unknown")
     set_installed_version "$version" "$commit_before" "rollback"
     
-    # Restart shell
-    log_info "Starting shell..."
-    nohup qs -c ii >/dev/null 2>&1 &
-    disown
-    
-    echo -e "${STY_GREEN}✓ Snapshot restored${STY_RST}"
+    # Restart shell (only if we have access to the session)
+    if [[ -n "$NIRI_SOCKET" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
+        log_info "Starting shell..."
+        nohup qs -c ii >/dev/null 2>&1 &
+        disown
+        tui_success "Snapshot restored and shell restarted"
+    else
+        tui_warn "Not in graphical session - shell restart skipped"
+        tui_info "Run: qs -c ii (in your Niri session)"
+        tui_success "Snapshot restored"
+    fi
 }
 
 ###############################################################################
