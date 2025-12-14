@@ -14,6 +14,13 @@ Scope {
     property int maxToasts: 5
     property int toastSpacing: 8
     
+    // Debounce tracking for reload toasts
+    property real _lastQsReloadTime: 0
+    property real _lastNiriReloadTime: 0
+    property bool _qsReloadPending: false
+    property bool _niriReloadPending: false
+    readonly property int _reloadDebounceMs: 500  // Coalesce reloads within this window
+    
     // Check if reload toasts should be shown - evaluated fresh each time
     function shouldShowReloadToast(): bool {
         // Global disable
@@ -61,26 +68,72 @@ Scope {
             popupLoader.active = false
         }
     }
+    
+    // Debounce timer for Quickshell reload toast
+    Timer {
+        id: qsReloadDebounce
+        interval: root._reloadDebounceMs
+        onTriggered: {
+            if (root._qsReloadPending) {
+                root._qsReloadPending = false
+                if (!root.shouldShowReloadToast()) return
+                root.addToast(
+                    "Quickshell reloaded",
+                    "",
+                    "refresh",
+                    false,
+                    2000,
+                    "quickshell",
+                    Appearance.colors.colPrimary
+                )
+            }
+        }
+    }
+    
+    // Debounce timer for Niri reload toast
+    Timer {
+        id: niriReloadDebounce
+        interval: root._reloadDebounceMs
+        onTriggered: {
+            if (root._niriReloadPending) {
+                root._niriReloadPending = false
+                // Only show if Quickshell didn't just reload (QML change triggers both)
+                const now = Date.now()
+                if (now - root._lastQsReloadTime < root._reloadDebounceMs) {
+                    // Quickshell just reloaded, skip Niri toast (it's a false positive)
+                    return
+                }
+                if (!root.shouldShowReloadToast()) return
+                root.addToast(
+                    "Niri config reloaded",
+                    "",
+                    "settings",
+                    false,
+                    2000,
+                    "niri",
+                    Appearance.colors.colTertiary
+                )
+            }
+        }
+    }
 
     // Quickshell reload signals
     Connections {
         target: Quickshell
         
         function onReloadCompleted() {
-            if (!root.shouldShowReloadToast()) return
-            root.addToast(
-                "Quickshell reloaded",
-                "",
-                "refresh",
-                false,
-                2000,
-                "quickshell",
-                Appearance.colors.colPrimary
-            )
+            const now = Date.now()
+            // Ignore if we just processed a reload
+            if (now - root._lastQsReloadTime < root._reloadDebounceMs) {
+                return
+            }
+            root._lastQsReloadTime = now
+            root._qsReloadPending = true
+            qsReloadDebounce.restart()
         }
         
         function onReloadFailed(error) {
-            // Always show errors
+            // Always show errors immediately
             root.addToast(
                 "Quickshell reload failed",
                 error,
@@ -99,18 +152,16 @@ Scope {
         
         function onConfigLoadFinished(ok, error) {
             if (ok) {
-                if (!root.shouldShowReloadToast()) return
-                root.addToast(
-                    "Niri config reloaded",
-                    "",
-                    "settings",
-                    false,
-                    2000,
-                    "niri",
-                    Appearance.colors.colTertiary
-                )
+                const now = Date.now()
+                // Ignore if we just processed a reload
+                if (now - root._lastNiriReloadTime < root._reloadDebounceMs) {
+                    return
+                }
+                root._lastNiriReloadTime = now
+                root._niriReloadPending = true
+                niriReloadDebounce.restart()
             } else {
-                // Always show errors
+                // Always show errors immediately
                 root.addToast(
                     "Niri config reload failed",
                     error || "Run 'niri validate' in terminal for details",
