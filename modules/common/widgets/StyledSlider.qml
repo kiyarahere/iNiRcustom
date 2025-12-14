@@ -47,6 +47,8 @@ Slider {
     property real handleMargins: 4
     property real trackDotSize: 3
     property string tooltipContent: `${Math.round(value * 100)}%`
+    property bool scrollable: false
+    property bool _userInteracting: false
     property bool wavy: configuration === StyledSlider.Configuration.Wavy // If true, the progress bar will have a wavy fill effect
     property bool animateWave: true
     property real waveAmplitudeMultiplier: wavy ? 0.5 : 0
@@ -61,24 +63,16 @@ Slider {
     from: 0
     to: 1
 
-    // Track if user is interacting to prevent binding from overwriting
-    property bool _userInteracting: false
-
-    Behavior on value {
-        enabled: !root._userInteracting // Disable animation during user interaction
-        SmoothedAnimation {
-            velocity: Appearance.animation.elementMoveFast.velocity
-        }
+    Timer {
+        id: _userInteractingReset
+        interval: 180
+        repeat: false
+        onTriggered: root._userInteracting = false
     }
 
-    // Emit moved() for both drag AND click-to-seek
-    onPressedChanged: {
-        if (pressed) {
-            root._userInteracting = true
-        } else {
-            // User released - emit moved with final value
-            root._userInteracting = false
-            root.moved()
+    Behavior on value { // This makes the adjusted value (like volume) shift smoothly
+        SmoothedAnimation {
+            velocity: Appearance.animation.elementMoveFast.velocity
         }
     }
 
@@ -105,21 +99,24 @@ Slider {
         anchors.fill: parent
         onPressed: (mouse) => mouse.accepted = false
         cursorShape: root.pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor 
-    }
 
-    // Scroll support
-    WheelHandler {
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
         onWheel: (event) => {
+            if (!root.scrollable) {
+                event.accepted = false
+                return
+            }
+
             root._userInteracting = true
+            _userInteractingReset.restart()
+
             const step = root.stepSize > 0 ? root.stepSize : 0.02
             if (event.angleDelta.y > 0) {
                 root.value = Math.min(root.value + step, root.to)
-            } else if (event.angleDelta.y < 0) {
+                root.moved()
+            } else {
                 root.value = Math.max(root.value - step, root.from)
+                root.moved()
             }
-            root._userInteracting = false
-            root.moved()
         }
     }
 
