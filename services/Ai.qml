@@ -297,18 +297,7 @@ Singleton {
             "key_get_description": Translation.tr("**Instructions**: Log into Mistral account, go to Keys on the sidebar, click Create new key"),
             "api_format": "mistral",
         }),
-        "openrouter-deepseek-r1": aiModelComponent.createObject(this, {
-            "name": "DeepSeek R1",
-            "icon": "deepseek-symbolic",
-            "description": Translation.tr("Online via %1 | %2's model").arg("OpenRouter").arg("DeepSeek"),
-            "homepage": "https://openrouter.ai/deepseek/deepseek-r1:free",
-            "endpoint": "https://openrouter.ai/api/v1/chat/completions",
-            "model": "deepseek/deepseek-r1:free",
-            "requires_key": true,
-            "key_id": "openrouter",
-            "key_get_link": "https://openrouter.ai/settings/keys",
-            "key_get_description": Translation.tr("**Pricing**: free. Data use policy varies depending on your OpenRouter account settings.\n\n**Instructions**: Log into OpenRouter account, go to Keys on the topright menu, click Create API Key"),
-        }),
+        // OpenRouter free models are loaded dynamically via getOpenRouterModels
     }
     property var modelList: Object.keys(root.models)
     property var currentModelId: {
@@ -344,6 +333,7 @@ Singleton {
         root._initialized = true;
 
         getOllamaModels.running = true
+        getOpenRouterModels.running = true
         getDefaultPrompts.running = true
         getUserPrompts.running = true
         getSavedChats.running = true
@@ -419,6 +409,45 @@ Singleton {
 
                 } catch (e) {
                     console.log("Could not fetch Ollama models:", e);
+                }
+            }
+        }
+    }
+
+    Process {
+        id: getOpenRouterModels
+        running: false
+        command: ["/usr/bin/curl", "-s", "https://openrouter.ai/api/v1/models"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    if (text.length === 0) return;
+                    const response = JSON.parse(text);
+                    const freeModels = (response.data || []).filter(m => 
+                        m.pricing?.prompt === "0" && m.pricing?.completion === "0"
+                    );
+                    
+                    freeModels.forEach(model => {
+                        const safeModelName = "openrouter-" + root.safeModelName(model.id);
+                        const provider = model.id.split("/")[0] || "Unknown";
+                        root.addModel(safeModelName, {
+                            "name": model.name || model.id,
+                            "icon": root.guessModelLogo(model.id),
+                            "description": Translation.tr("Free via OpenRouter | %1").arg(provider),
+                            "homepage": `https://openrouter.ai/${model.id}`,
+                            "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+                            "model": model.id,
+                            "requires_key": true,
+                            "key_id": "openrouter",
+                            "key_get_link": "https://openrouter.ai/settings/keys",
+                            "key_get_description": Translation.tr("**Pricing**: free tier model.\n\n**Instructions**: Log into OpenRouter, go to Keys, click Create API Key"),
+                        });
+                    });
+                    
+                    root.modelList = Object.keys(root.models);
+                    console.log("[Ai] Loaded", freeModels.length, "free OpenRouter models");
+                } catch (e) {
+                    console.log("[Ai] Could not fetch OpenRouter models:", e);
                 }
             }
         }
@@ -699,7 +728,7 @@ Singleton {
 
             /* Create command string */
             let scriptRequestContent = ""
-            scriptRequestContent += `curl --no-buffer "${endpoint}"`
+            scriptRequestContent += `curl -sS --no-buffer "${endpoint}"`
                 + ` ${headerString}`
                 + (authHeader ? ` ${authHeader}` : "")
                 + ` --data '${CF.StringUtils.shellSingleQuoteEscape(JSON.stringify(data))}'`
@@ -718,7 +747,7 @@ Singleton {
             onRead: data => {
                 if (data.length === 0) return;
                 if (requester.message.thinking) requester.message.thinking = false;
-                // console.log("[Ai] Raw response line: ", data);
+                console.log("[Ai] Raw response line: ", data.substring(0, 100));
 
                 // Handle response line
                 try {
