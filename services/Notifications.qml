@@ -89,21 +89,26 @@ Singleton {
     // Estado de silencio / "No molestar" - synced with config
     property bool silent: false
     
+    function toggleSilent(): void {
+        silent = !silent
+    }
+    
     Connections {
         target: Config
-        function onReadyChanged() {
-            if (Config.ready) {
-                root.silent = Config.options?.notifications?.silent ?? false
-            }
-        }
         function onOptionsChanged() {
-            root.silent = Config.options?.notifications?.silent ?? false
+            const configSilent = Config.options?.notifications?.silent ?? false
+            if (root.silent !== configSilent) {
+                root.silent = configSilent
+            }
         }
     }
     
     onSilentChanged: {
-        if (Config.ready && Config.options?.notifications?.silent !== silent) {
-            Config.setNestedValue("notifications.silent", silent)
+        if (Config.ready) {
+            const configSilent = Config.options?.notifications?.silent ?? false
+            if (configSilent !== silent) {
+                Config.setNestedValue("notifications.silent", silent)
+            }
         }
     }
     property int unread: 0
@@ -520,6 +525,8 @@ Singleton {
 
     Component.onCompleted: {
         // Lazy: load persistent notifications only when a UI needs them.
+        // Initialize silent from config
+        silent = Config.options?.notifications?.silent ?? false
     }
 
     FileView {

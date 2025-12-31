@@ -36,6 +36,11 @@ Singleton {
     property real tempPercentage: Math.min(maxTemp / 100, 1.0)  // Normalized to 100°C max
     property int tempWarningThreshold: 80  // Warning at 80°C
 
+    // Disk usage (root partition)
+    property real diskTotal: 1
+    property real diskUsed: 0
+    property real diskUsedPercentage: diskTotal > 0 ? diskUsed / diskTotal : 0
+
     property string maxAvailableMemoryString: kbToGbString(ResourceUsage.memoryTotal)
     property string maxAvailableSwapString: kbToGbString(ResourceUsage.swapTotal)
     property string maxAvailableCpuString: "--"
@@ -145,6 +150,9 @@ Singleton {
 	        gpuTemp = Math.round(gpuTempRaw / 1000)
 
             root.updateHistories()
+            
+            // Update disk usage
+            diskProc.running = true
 	    }
 	}
 
@@ -218,6 +226,25 @@ Singleton {
                     root.maxAvailableCpuString = "--"
                 } else {
                     root.maxAvailableCpuString = (mhz / 1000).toFixed(0) + " GHz"
+                }
+            }
+        }
+    }
+
+    Process {
+        id: diskProc
+        command: ["/usr/bin/df", "-B1", "/"]
+        running: false
+        stdout: StdioCollector {
+            id: diskCollector
+            onStreamFinished: {
+                const lines = diskCollector.text.trim().split("\n")
+                if (lines.length >= 2) {
+                    const parts = lines[1].split(/\s+/)
+                    if (parts.length >= 4) {
+                        root.diskTotal = parseInt(parts[1]) || 1
+                        root.diskUsed = parseInt(parts[2]) || 0
+                    }
                 }
             }
         }
