@@ -526,6 +526,7 @@ Singleton {
                 property bool cardStyle: false
                 property bool enable: false
                 property bool monochromeIcons: true
+                property string position: "bottom" // "top", "bottom", "left", "right"
                 property real height: 60
                 property real iconSize: 35
                 property real hoverRegionHeight: 2
@@ -792,8 +793,9 @@ Singleton {
                     property bool controls: true
                     property bool status: true
                     property bool crypto: false
+                    property bool wallpaper: false
                     // Widget order (drag to reorder)
-                    property list<string> widgetOrder: ["media", "week", "context", "note", "launch", "controls", "status", "crypto"]
+                    property list<string> widgetOrder: ["media", "week", "context", "note", "launch", "controls", "status", "crypto", "wallpaper"]
                     // Spacing between widgets (px)
                     property int spacing: 8
 
@@ -838,6 +840,12 @@ Singleton {
                         { "icon": "web", "name": "Browser", "cmd": "/usr/bin/firefox" },
                         { "icon": "code", "name": "Code", "cmd": "/usr/bin/code" }
                     ]
+
+                    // QuickWallpaper settings
+                    property JsonObject quickWallpaper: JsonObject {
+                        property int itemSize: 72
+                        property bool showHeader: true
+                    }
                 }
                 property JsonObject cornerOpen: JsonObject {
                     property bool enable: true

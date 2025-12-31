@@ -17,7 +17,7 @@ Item {
         const missing = defaultOrder.filter(id => !saved.includes(id))
         return [...saved, ...missing]
     }
-    readonly property var defaultOrder: ["media", "week", "context", "note", "launch", "controls", "status", "crypto"]
+    readonly property var defaultOrder: ["media", "week", "context", "note", "launch", "controls", "status", "crypto", "wallpaper"]
     readonly property int widgetSpacing: Config.options?.sidebar?.widgets?.spacing ?? 8
 
     readonly property bool showMedia: Config.options?.sidebar?.widgets?.media ?? true
@@ -28,6 +28,7 @@ Item {
     readonly property bool showControls: Config.options?.sidebar?.widgets?.controls ?? true
     readonly property bool showStatus: Config.options?.sidebar?.widgets?.status ?? true
     readonly property bool showCrypto: Config.options?.sidebar?.widgets?.crypto ?? false
+    readonly property bool showWallpaper: Config.options?.sidebar?.widgets?.wallpaper ?? false
 
     readonly property var visibleWidgets: {
         const order = widgetOrder ?? defaultOrder
@@ -41,6 +42,7 @@ Item {
                 case "controls": return showControls
                 case "status": return showStatus
                 case "crypto": return showCrypto
+                case "wallpaper": return showWallpaper
                 default: return false
             }
         })
@@ -86,7 +88,7 @@ Item {
                 visible: Layout.preferredHeight > 0
                 opacity: root.dragIndex === index ? 0.5 : 1
 
-                readonly property bool needsMargin: modelData === "context" || modelData === "note" || modelData === "media" || modelData === "crypto"
+                readonly property bool needsMargin: modelData === "context" || modelData === "note" || modelData === "media" || modelData === "crypto" || modelData === "wallpaper"
 
                 Behavior on opacity {
                     enabled: Appearance.animationsEnabled
@@ -152,6 +154,7 @@ Item {
                             case "controls": return controlsWidget
                             case "status": return statusWidget
                             case "crypto": return cryptoWidget
+                            case "wallpaper": return wallpaperWidget
                             default: return null
                         }
                     }
@@ -248,4 +251,5 @@ Item {
     Component { id: controlsWidget; ControlsCard {} }
     Component { id: statusWidget; StatusRings {} }
     Component { id: cryptoWidget; CryptoWidget {} }
+    Component { id: wallpaperWidget; QuickWallpaper {} }
 }

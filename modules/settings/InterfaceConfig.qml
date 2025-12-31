@@ -354,17 +354,40 @@ ContentPage {
 
             ConfigRow {
                 uniform: true
-                SettingsSwitch {
-                    buttonIcon: "highlight_mouse_cursor"
-                    text: Translation.tr("Hover to reveal")
-                    checked: Config.options.dock.hoverToReveal
-                    onCheckedChanged: {
-                        Config.options.dock.hoverToReveal = checked;
-                    }
-                    StyledToolTip {
-                        text: Translation.tr("Show dock when hovering the bottom edge of the screen")
+                ContentSubsection {
+                    title: Translation.tr("Dock position")
+
+                    ConfigSelectionArray {
+                        currentValue: Config.options?.dock?.position ?? "bottom"
+                        onSelected: newValue => {
+                            Config.setNestedValue('dock.position', newValue);
+                        }
+                        options: [
+                            { displayName: Translation.tr("Top"), icon: "arrow_upward", value: "top" },
+                            { displayName: Translation.tr("Left"), icon: "arrow_back", value: "left" },
+                            { displayName: Translation.tr("Bottom"), icon: "arrow_downward", value: "bottom" },
+                            { displayName: Translation.tr("Right"), icon: "arrow_forward", value: "right" }
+                        ]
                     }
                 }
+                ContentSubsection {
+                    title: Translation.tr("Reveal behavior")
+
+                    ConfigSelectionArray {
+                        currentValue: Config.options?.dock?.hoverToReveal ?? true
+                        onSelected: newValue => {
+                            Config.setNestedValue('dock.hoverToReveal', newValue);
+                        }
+                        options: [
+                            { displayName: Translation.tr("Hover"), icon: "highlight_mouse_cursor", value: true },
+                            { displayName: Translation.tr("Empty workspace"), icon: "desktop_windows", value: false }
+                        ]
+                    }
+                }
+            }
+
+            ConfigRow {
+                uniform: true
                 SettingsSwitch {
                     buttonIcon: "keep"
                     text: Translation.tr("Pinned on startup")
@@ -376,16 +399,16 @@ ContentPage {
                         text: Translation.tr("Keep dock visible when the shell starts")
                     }
                 }
-            }
-            SettingsSwitch {
-                buttonIcon: "colors"
-                text: Translation.tr("Tint app icons")
-                checked: Config.options.dock.monochromeIcons
-                onCheckedChanged: {
-                    Config.options.dock.monochromeIcons = checked;
-                }
-                StyledToolTip {
-                    text: Translation.tr("Apply accent color tint to dock app icons")
+                SettingsSwitch {
+                    buttonIcon: "colors"
+                    text: Translation.tr("Tint app icons")
+                    checked: Config.options.dock.monochromeIcons
+                    onCheckedChanged: {
+                        Config.options.dock.monochromeIcons = checked;
+                    }
+                    StyledToolTip {
+                        text: Translation.tr("Apply accent color tint to dock app icons")
+                    }
                 }
             }
             SettingsSwitch {
@@ -457,8 +480,16 @@ ContentPage {
                 }
 
                 ConfigSpinBox {
-                    icon: "vertical_align_bottom"
-                    text: Translation.tr("Hover reveal region height (px)")
+                    icon: {
+                        const pos = Config.options?.dock?.position ?? "bottom"
+                        switch (pos) {
+                            case "top": return "vertical_align_top"
+                            case "left": return "align_horizontal_left"
+                            case "right": return "align_horizontal_right"
+                            default: return "vertical_align_bottom"
+                        }
+                    }
+                    text: Translation.tr("Hover reveal region size (px)")
                     value: Config.options.dock.hoverRegionHeight ?? 2
                     from: 1
                     to: 20
@@ -468,7 +499,7 @@ ContentPage {
                         Config.options.dock.hoverRegionHeight = value;
                     }
                     StyledToolTip {
-                        text: Translation.tr("Height of the invisible area at screen bottom that triggers dock reveal")
+                        text: Translation.tr("Size of the invisible area at screen edge that triggers dock reveal")
                     }
                 }
             }
@@ -1259,6 +1290,13 @@ ContentPage {
                     checked: Config.options?.sidebar?.widgets?.crypto ?? false
                     onCheckedChanged: Config.setNestedValue("sidebar.widgets.crypto", checked)
                 }
+
+                SettingsSwitch {
+                    buttonIcon: "wallpaper"
+                    text: Translation.tr("Wallpaper picker")
+                    checked: Config.options?.sidebar?.widgets?.wallpaper ?? false
+                    onCheckedChanged: Config.setNestedValue("sidebar.widgets.wallpaper", checked)
+                }
             }
 
             ContentSubsection {
@@ -1367,10 +1405,12 @@ ContentPage {
                         visible: coinInput.text.length > 0 && cryptoSection.filteredCoins().length > 0
 
                         background: Rectangle {
-                            color: Appearance.colors.colLayer2
-                            radius: Appearance.rounding.small
+                            color: Appearance.inirEverywhere ? Appearance.inir.colLayer2
+                                 : Appearance.colors.colLayer2Base
+                            radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
                             border.width: 1
-                            border.color: Appearance.colors.colLayer0Border
+                            border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder
+                                        : Appearance.colors.colLayer0Border
                         }
 
                         ListView {
@@ -1450,6 +1490,35 @@ ContentPage {
                             }
                         }
                     }
+                }
+            }
+
+            ContentSubsection {
+                title: Translation.tr("Wallpaper Picker")
+                tooltip: Translation.tr("Quick wallpaper selection widget")
+                visible: Config.options?.sidebar?.widgets?.wallpaper ?? false
+
+                ConfigSpinBox {
+                    icon: "photo_size_select_large"
+                    text: Translation.tr("Thumbnail size")
+                    value: Config.options?.sidebar?.widgets?.quickWallpaper?.itemSize ?? 56
+                    from: 40
+                    to: 80
+                    stepSize: 4
+                    onValueChanged: Config.setNestedValue("sidebar.widgets.quickWallpaper.itemSize", value)
+                }
+
+                SettingsSwitch {
+                    buttonIcon: "title"
+                    text: Translation.tr("Show header")
+                    checked: Config.options?.sidebar?.widgets?.quickWallpaper?.showHeader ?? true
+                    onCheckedChanged: Config.setNestedValue("sidebar.widgets.quickWallpaper.showHeader", checked)
+                }
+
+                NoticeBox {
+                    Layout.fillWidth: true
+                    materialIcon: "swipe"
+                    text: Translation.tr("Scroll horizontally to browse wallpapers")
                 }
             }
 
