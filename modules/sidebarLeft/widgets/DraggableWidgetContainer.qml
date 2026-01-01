@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
@@ -11,13 +12,11 @@ Item {
     id: root
     implicitHeight: column.implicitHeight
     
-    // Animation property from parent
     property bool animateIn: false
 
     property var widgetOrder: {
         const saved = Config.options?.sidebar?.widgets?.widgetOrder
         if (!saved) return defaultOrder
-        // Agregar widgets nuevos que no estén en el orden guardado
         const missing = defaultOrder.filter(id => !saved.includes(id))
         return [...saved, ...missing]
     }
@@ -52,9 +51,12 @@ Item {
         })
     }
 
+    // Drag state
     property int dragIndex: -1
-    property int dropIndex: -1
-    property bool editMode: false  // Ctrl+Click activa modo edición
+    property int hoverIndex: -1
+    property bool editMode: false
+    property real dragStartY: 0
+    property real dragCurrentY: 0
 
     function moveWidget(fromIdx, toIdx) {
         if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return
@@ -69,6 +71,62 @@ Item {
         newOrder.splice(realTo, 0, fromId)
         
         Config.setNestedValue("sidebar.widgets.widgetOrder", newOrder)
+    }
+
+    function startDrag(index: int, mouseY: real) {
+        dragIndex = index
+        hoverIndex = index
+        dragStartY = mouseY
+        dragCurrentY = mouseY
+        editMode = true
+    }
+
+    function updateDrag(mouseY: real) {
+        if (dragIndex < 0) return
+        dragCurrentY = mouseY
+        
+        // Calculate which widget we're hovering over
+        let accY = 0
+        for (let i = 0; i < repeater.count; i++) {
+            const item = repeater.itemAt(i)
+            if (!item?.visible) continue
+            const itemCenter = accY + item.height / 2
+            if (mouseY < itemCenter) {
+                hoverIndex = i
+                return
+            }
+            accY += item.height + column.spacing
+        }
+        hoverIndex = repeater.count - 1
+    }
+
+    function endDrag() {
+        if (dragIndex >= 0 && hoverIndex >= 0 && dragIndex !== hoverIndex) {
+            moveWidget(dragIndex, hoverIndex)
+        }
+        dragIndex = -1
+        hoverIndex = -1
+        editMode = false
+        dragStartY = 0
+        dragCurrentY = 0
+    }
+
+    function cancelDrag() {
+        dragIndex = -1
+        hoverIndex = -1
+        editMode = false
+        dragStartY = 0
+        dragCurrentY = 0
+    }
+
+    // Reset on sidebar close
+    Connections {
+        target: GlobalStates
+        function onSidebarLeftOpenChanged() {
+            if (!GlobalStates.sidebarLeftOpen) {
+                root.cancelDrag()
+            }
+        }
     }
 
     ColumnLayout {
@@ -86,14 +144,16 @@ Item {
                 required property int index
 
                 Layout.fillWidth: true
-                Layout.preferredHeight: contentLoader.item ? contentLoader.item.implicitHeight : 0
+                Layout.preferredHeight: contentLoader.item?.implicitHeight ?? 0
                 Layout.leftMargin: needsMargin ? 12 : 0
                 Layout.rightMargin: needsMargin ? 12 : 0
                 visible: Layout.preferredHeight > 0
 
-                readonly property bool needsMargin: modelData === "context" || modelData === "note" || modelData === "media" || modelData === "crypto" || modelData === "wallpaper"
+                readonly property bool needsMargin: ["context", "note", "media", "crypto", "wallpaper"].includes(modelData)
+                readonly property bool isBeingDragged: root.dragIndex === index
+                readonly property bool isDropTarget: root.hoverIndex === index && root.dragIndex !== index && root.dragIndex >= 0
                 
-                // Staggered animation - elegant cascade from top to bottom
+                // Staggered animation
                 readonly property int staggerDelay: 45
                 property bool animatedIn: false
                 
@@ -106,10 +166,10 @@ Item {
                     onTriggered: widgetWrapper.animatedIn = true
                 }
                 
-                opacity: root.dragIndex === index ? 0.5 : (animatedIn ? 1 : 0)
+                opacity: animatedIn ? 1 : 0
                 scale: animatedIn ? 1 : 0.96
-                transformOrigin: Item.Top
-                transform: Translate { y: widgetWrapper.animatedIn ? 0 : 24 }
+                transformOrigin: Item.Center
+                transform: Translate { y: animatedIn ? 0 : 24 }
 
                 Behavior on opacity {
                     enabled: Appearance.animationsEnabled
@@ -120,115 +180,185 @@ Item {
                     }
                 }
                 Behavior on scale {
-                    enabled: Appearance.animationsEnabled
-                    NumberAnimation { 
-                        duration: 550
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
-                    }
-                }
-                Behavior on transform {
-                    enabled: Appearance.animationsEnabled
-                    NumberAnimation { 
-                        duration: 500
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Appearance.animationCurves.emphasizedDecel
-                    }
+                    enabled: Appearance.animationsEnabled && !widgetWrapper.isBeingDragged
+                    NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
                 }
 
-                // Drop zone indicator - más visible con fondo semitransparente
+                // Drop indicator line
                 Rectangle {
                     id: dropIndicator
-                    anchors.fill: parent
-                    anchors.margins: -4
-                    radius: Appearance.rounding.small + 2
-                    color: ColorUtils.transparentize(Appearance.colors.colPrimary, 0.75)
-                    border.width: 1
-                    border.color: Appearance.colors.colPrimary
-                    opacity: (root.dropIndex === widgetWrapper.index && root.dragIndex !== widgetWrapper.index) ? 1 : 0
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.topMargin: -root.widgetSpacing / 2 - 1
+                    height: 3
+                    radius: 1.5
+                    color: Appearance.colors.colPrimary
+                    opacity: widgetWrapper.isDropTarget && root.hoverIndex < root.dragIndex ? 1 : 0
                     visible: opacity > 0
-                    z: 50
-
+                    
                     Behavior on opacity {
                         enabled: Appearance.animationsEnabled
-                        NumberAnimation { duration: 100 }
+                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
                     }
-
-                    // Linea superior animada para indicar "insertar aquí"
-
-                    // Icono de drop
+                }
+                
+                Rectangle {
+                    id: dropIndicatorBottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: -root.widgetSpacing / 2 - 1
+                    height: 3
+                    radius: 1.5
+                    color: Appearance.colors.colPrimary
+                    opacity: widgetWrapper.isDropTarget && root.hoverIndex > root.dragIndex ? 1 : 0
+                    visible: opacity > 0
+                    
+                    Behavior on opacity {
+                        enabled: Appearance.animationsEnabled
+                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                    }
                 }
 
-                Loader {
-                    id: contentLoader
-                    width: parent.width
-                    sourceComponent: {
-                        switch(widgetWrapper.modelData) {
-                            case "media": return mediaWidget
-                            case "week": return weekWidget
-                            case "context": return contextWidget
-                            case "note": return noteWidget
-                            case "launch": return launchWidget
-                            case "controls": return controlsWidget
-                            case "status": return statusWidget
-                            case "crypto": return cryptoWidget
-                            case "wallpaper": return wallpaperWidget
-                            default: return null
+                Item {
+                    id: contentContainer
+                    anchors.fill: parent
+                    
+                    // Elevated shadow when dragging
+                    RectangularShadow {
+                        anchors.fill: contentLoader
+                        radius: contentLoader.item?.radius ?? Appearance.rounding.small
+                        opacity: widgetWrapper.isBeingDragged ? 0.5 : 0
+                        blur: 24
+                        spread: 0.15
+                        color: Appearance.colors.colShadow
+                        
+                        Behavior on opacity {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                        }
+                    }
+
+                    Loader {
+                        id: contentLoader
+                        width: parent.width
+                        
+                        // Visual feedback when dragging
+                        scale: widgetWrapper.isBeingDragged ? 1.02 : 1
+                        opacity: widgetWrapper.isBeingDragged ? 0.95 : 1
+                        
+                        Behavior on scale {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                        }
+                        Behavior on opacity {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation { duration: 150 }
+                        }
+                        
+                        sourceComponent: {
+                            switch(widgetWrapper.modelData) {
+                                case "media": return mediaWidget
+                                case "week": return weekWidget
+                                case "context": return contextWidget
+                                case "note": return noteWidget
+                                case "launch": return launchWidget
+                                case "controls": return controlsWidget
+                                case "status": return statusWidget
+                                case "crypto": return cryptoWidget
+                                case "wallpaper": return wallpaperWidget
+                                default: return null
+                            }
+                        }
+                    }
+                    
+                    // Accent tint when dragging
+                    Rectangle {
+                        anchors.fill: contentLoader
+                        radius: contentLoader.item?.radius ?? Appearance.rounding.small
+                        color: Appearance.colors.colPrimary
+                        opacity: widgetWrapper.isBeingDragged ? 0.08 : 0
+                        
+                        Behavior on opacity {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation { duration: 150 }
+                        }
+                    }
+                    
+                    // Drag handle overlay (visible on long press)
+                    Rectangle {
+                        id: dragHandleOverlay
+                        anchors.fill: contentLoader
+                        radius: contentLoader.item?.radius ?? Appearance.rounding.small
+                        color: "transparent"
+                        border.width: widgetWrapper.isBeingDragged ? 2 : 0
+                        border.color: Appearance.colors.colPrimary
+                        
+                        Behavior on border.width {
+                            enabled: Appearance.animationsEnabled
+                            NumberAnimation { duration: 150 }
                         }
                     }
                 }
 
-                // Drag handle - Ctrl+Click para activar
+                // Long press to drag
                 MouseArea {
-                    id: dragHandle
+                    id: dragArea
                     anchors.fill: parent
-                    hoverEnabled: false  // No capturar hover - dejar que pase a los widgets
                     acceptedButtons: Qt.LeftButton
-                    propagateComposedEvents: true
-                    // No bloquear wheel events
-                    onWheel: (wheel) => { wheel.accepted = false }
-
-                    property bool isDragging: false
+                    propagateComposedEvents: !root.editMode
+                    
+                    property bool longPressTriggered: false
+                    property real pressY: 0
+                    
+                    onWheel: (wheel) => wheel.accepted = false
 
                     onPressed: (mouse) => {
-                        if (mouse.modifiers & Qt.ControlModifier) {
-                            isDragging = true
-                            root.dragIndex = widgetWrapper.index
-                            root.editMode = true
-                            mouse.accepted = true
-                        } else {
-                            mouse.accepted = false
-                        }
+                        longPressTriggered = false
+                        pressY = mapToItem(column, mouse.x, mouse.y).y
+                        longPressTimer.restart()
                     }
-
+                    
                     onPositionChanged: (mouse) => {
-                        if (!isDragging) return
-                        const globalY = mapToItem(column, mouse.x, mouse.y).y
-                        let accY = 0
-                        for (let i = 0; i < repeater.count; i++) {
-                            const item = repeater.itemAt(i)
-                            if (!item?.visible) continue
-                            if (globalY < accY + item.height / 2) {
-                                root.dropIndex = i
-                                return
+                        if (root.editMode && root.dragIndex === widgetWrapper.index) {
+                            const globalY = mapToItem(column, mouse.x, mouse.y).y
+                            root.updateDrag(globalY)
+                        } else if (!longPressTriggered) {
+                            // Cancel long press if moved too much
+                            const globalY = mapToItem(column, mouse.x, mouse.y).y
+                            if (Math.abs(globalY - pressY) > 10) {
+                                longPressTimer.stop()
                             }
-                            accY += item.height + column.spacing
                         }
-                        root.dropIndex = repeater.count - 1
                     }
-
+                    
                     onReleased: {
-                        if (isDragging && root.dropIndex >= 0 && root.dropIndex !== root.dragIndex) {
-                            root.moveWidget(root.dragIndex, root.dropIndex)
+                        longPressTimer.stop()
+                        if (root.editMode) {
+                            root.endDrag()
                         }
-                        isDragging = false
-                        root.dragIndex = -1
-                        root.dropIndex = -1
-                        root.editMode = false
+                        longPressTriggered = false
+                    }
+                    
+                    onCanceled: {
+                        longPressTimer.stop()
+                        if (root.editMode) {
+                            root.cancelDrag()
+                        }
+                        longPressTriggered = false
+                    }
+                    
+                    Timer {
+                        id: longPressTimer
+                        interval: 400
+                        onTriggered: {
+                            dragArea.longPressTriggered = true
+                            const globalY = dragArea.mapToItem(column, dragArea.mouseX, dragArea.mouseY).y
+                            root.startDrag(widgetWrapper.index, globalY)
+                        }
                     }
                 }
-
-                // Icono de drag visible cuando se está arrastrando
             }
         }
     }

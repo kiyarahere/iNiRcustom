@@ -12,10 +12,7 @@ import "root:"
 Item {
     id: root
     
-    // Exponer editMode para bloquear swipe del SwipeView padre
     readonly property bool editMode: widgetContainer.editMode
-    
-    // Animation state - start true if sidebar already open
     property bool animateIn: GlobalStates.sidebarLeftOpen
     
     Connections {
@@ -39,18 +36,22 @@ Item {
     Flickable {
         id: flickable
         anchors.fill: parent
+        anchors.bottomMargin: editHint.visible ? editHint.height + 12 : 0
         contentHeight: mainColumn.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        // Bloquear scroll horizontal cuando se arrastra widget
         interactive: !root.editMode
+        
+        Behavior on anchors.bottomMargin {
+            enabled: Appearance.animationsEnabled
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
 
         ColumnLayout {
             id: mainColumn
             width: flickable.width
             spacing: 0
 
-            // Time header (always at top)
             GlanceHeader {
                 id: glanceHeader
                 Layout.fillWidth: true
@@ -87,7 +88,6 @@ Item {
                 }
             }
 
-            // Draggable widgets container
             DraggableWidgetContainer {
                 id: widgetContainer
                 Layout.fillWidth: true
@@ -95,6 +95,50 @@ Item {
             }
 
             Item { Layout.preferredHeight: 12 }
+        }
+    }
+    
+    // Edit mode hint
+    Rectangle {
+        id: editHint
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: 8
+        width: hintContent.implicitWidth + 24
+        height: 32
+        radius: 16
+        color: Appearance.colors.colPrimary
+        opacity: root.editMode ? 1 : 0
+        visible: opacity > 0
+        scale: root.editMode ? 1 : 0.9
+        
+        Behavior on opacity {
+            enabled: Appearance.animationsEnabled
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+        Behavior on scale {
+            enabled: Appearance.animationsEnabled
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+        
+        Row {
+            id: hintContent
+            anchors.centerIn: parent
+            spacing: 6
+            
+            MaterialSymbol {
+                text: "swap_vert"
+                iconSize: 16
+                color: Appearance.colors.colOnPrimary
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            StyledText {
+                text: Translation.tr("Drag to reorder")
+                font.pixelSize: Appearance.font.pixelSize.smaller
+                font.weight: Font.Medium
+                color: Appearance.colors.colOnPrimary
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
     }
 }

@@ -115,18 +115,21 @@ MouseArea { // Notification group area
 
     StyledRectangularShadow {
         target: background
-        visible: popup && !Appearance.inirEverywhere
+        visible: popup && !Appearance.auroraEverywhere && !Appearance.inirEverywhere
     }
     
-    GlassBackground { // Background of the notification
+    Rectangle { // Background of the notification
         id: background
         anchors.left: parent.left
         width: parent.width
-        fallbackColor: popup 
-            ? ColorUtils.applyAlpha(Appearance.colors.colLayer2, 1 - Appearance.backgroundTransparency)
-            : Appearance.colors.colLayer2
-        inirColor: popup ? Appearance.inir.colLayer2 : Appearance.inir.colLayer1
-        auroraTransparency: popup ? Appearance.aurora.popupTransparentize : Appearance.aurora.subSurfaceTransparentize
+        
+        // For popup: solid color (no blur behind)
+        // For sidebar: transparent to show parent's blur
+        color: Appearance.inirEverywhere ? (popup ? Appearance.inir.colLayer2 : Appearance.inir.colLayer1)
+            : Appearance.auroraEverywhere ? (popup ? Appearance.colors.colLayer2Base : "transparent")
+            : (popup ? ColorUtils.applyAlpha(Appearance.colors.colLayer2, 1 - Appearance.backgroundTransparency) 
+                     : Appearance.colors.colLayer2)
+        
         radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
         border.width: (Appearance.inirEverywhere || (Appearance.auroraEverywhere && popup)) ? 1 : 0
         border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder 

@@ -174,6 +174,7 @@ Item {
                     Loader {
                         id: widgetsLoader
                         active: root.contentReady && root.widgetsEnabled
+                        readonly property bool editMode: item?.editMode ?? false
                         sourceComponent: WidgetsView {}
                         
                         transform: Translate { y: widgetsLoader.status === Loader.Ready ? 0 : 30 }

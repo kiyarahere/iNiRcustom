@@ -127,11 +127,13 @@ Item { // Notification item area
         color: (expanded && !onlyNotification) ? 
             (notificationObject.urgency == NotificationUrgency.Critical) ? 
                 ColorUtils.mix(Appearance.colors.colSecondaryContainer, Appearance.colors.colLayer2, 0.35) :
-                (Appearance.auroraEverywhere ? Appearance.aurora.colElevatedSurface : Appearance.colors.colLayer3) :
+                (Appearance.inirEverywhere ? Appearance.inir.colLayer2
+                    : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface
+                    : Appearance.colors.colLayer3) :
             "transparent"
         border.width: (expanded && !onlyNotification && (Appearance.auroraEverywhere || Appearance.inirEverywhere)) ? 1 : 0
         border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder 
-            : Appearance.auroraEverywhere ? Appearance.aurora.colTooltipBorder 
+            : Appearance.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colOutline, 0.8)
             : Appearance.colors.colLayer0Border
 
         implicitHeight: expanded ? (contentColumn.implicitHeight + padding * 2) : summaryRow.implicitHeight

@@ -705,24 +705,24 @@ ContentPage {
             ConfigSpinBox {
                 icon: "av_timer"
                 text: Translation.tr("Timeout (ms)")
-                value: Config.options.notifications.timeout
+                value: Config.options?.notifications?.timeoutNormal ?? 7000
                 from: 1000
-                to: 10000
+                to: 30000
                 stepSize: 500
                 onValueChanged: {
-                    Config.options.notifications.timeout = value;
+                    Config.setNestedValue("notifications.timeoutNormal", value)
                 }
                 StyledToolTip {
                     text: Translation.tr("Duration in milliseconds before a notification automatically closes")
                 }
             }
 
-            SettingsSwitch {
+            ConfigSwitch {
                 buttonIcon: "pinch"
                 text: Translation.tr("Scale on hover")
-                checked: Config.options.notifications.scaleOnHover
+                checked: Config.options?.notifications?.scaleOnHover ?? false
                 onCheckedChanged: {
-                    Config.options.notifications.scaleOnHover = checked;
+                    Config.setNestedValue("notifications.scaleOnHover", checked)
                 }
                 StyledToolTip {
                     text: Translation.tr("Slightly enlarge notifications when the mouse hovers over them")
@@ -731,12 +731,12 @@ ContentPage {
             ConfigSpinBox {
                 icon: "vertical_align_top"
                 text: Translation.tr("Margin (px)")
-                value: Config.options.notifications.margin
+                value: Config.options?.notifications?.edgeMargin ?? 4
                 from: 0
                 to: 100
                 stepSize: 1
                 onValueChanged: {
-                    Config.options.notifications.margin = value;
+                    Config.setNestedValue("notifications.edgeMargin", value)
                 }
                 StyledToolTip {
                     text: Translation.tr("Spacing between notifications and the screen edge/anchor")
@@ -747,17 +747,15 @@ ContentPage {
                 title: Translation.tr("Anchor")
 
                 ConfigSelectionArray {
-                    currentValue: Config.options.notifications.anchor
+                    currentValue: Config.options?.notifications?.position ?? "topRight"
                     onSelected: newValue => {
-                        Config.options.notifications.anchor = newValue;
+                        Config.setNestedValue("notifications.position", newValue)
                     }
                     options: [
-                        { displayName: Translation.tr("Top Right"), icon: "north_east", value: "top-right" },
-                        { displayName: Translation.tr("Top Left"), icon: "north_west", value: "top-left" },
-                        { displayName: Translation.tr("Bottom Right"), icon: "south_east", value: "bottom-right" },
-                        { displayName: Translation.tr("Bottom Left"), icon: "south_west", value: "bottom-left" },
-                        { displayName: Translation.tr("Top Center"), icon: "arrow_drop_up", value: "top-center" },
-                        { displayName: Translation.tr("Bottom Center"), icon: "arrow_drop_down", value: "bottom-center" }
+                        { displayName: Translation.tr("Top Right"), icon: "north_east", value: "topRight" },
+                        { displayName: Translation.tr("Top Left"), icon: "north_west", value: "topLeft" },
+                        { displayName: Translation.tr("Bottom Right"), icon: "south_east", value: "bottomRight" },
+                        { displayName: Translation.tr("Bottom Left"), icon: "south_west", value: "bottomLeft" }
                     ]
                 }
             }
