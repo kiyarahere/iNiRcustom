@@ -179,6 +179,15 @@ Singleton {
     function handleNiriEvent(event) {
         const eventType = Object.keys(event)[0]
 
+        // During GameMode, skip non-essential events to reduce CPU usage
+        if (GameMode.active) {
+            // Only process critical events: focus changes, window open/close
+            const criticalEvents = ['WindowFocusChanged', 'WindowClosed', 'WindowOpenedOrChanged', 'WorkspaceActivated']
+            if (!criticalEvents.includes(eventType)) {
+                return
+            }
+        }
+
         switch (eventType) {
         case 'WorkspacesChanged':
             handleWorkspacesChanged(event.WorkspacesChanged)
