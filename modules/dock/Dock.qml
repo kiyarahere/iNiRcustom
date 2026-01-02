@@ -51,7 +51,7 @@ Scope {
                 screen: panelLoader.modelData
                 visible: !GlobalStates.screenLocked
 
-                property bool reveal: root.pinned || (Config.options?.dock?.hoverToReveal && dockMouseArea.containsMouse) || dockApps.requestDockShow || (!ToplevelManager.activeToplevel?.activated)
+                property bool reveal: root.pinned || (Config.options?.dock?.hoverToReveal && dockMouseArea.containsMouse) || (dockApps?.requestDockShow || dockAppsVertical?.requestDockShow) || (Config.options?.dock?.showOnDesktop !== false && !ToplevelManager.activeToplevel?.activated)
 
                 readonly property real dockHeight: Config.options?.dock?.height ?? 70
 
@@ -83,10 +83,14 @@ Scope {
                     implicitHeight: root.isVertical ? (dockBackground.implicitHeight + Appearance.sizes.elevationMargin * 2) : parent.height
 
                     anchors {
-                        top: root.isTop ? parent.top : (!root.isVertical ? parent.top : undefined)
-                        bottom: root.position === "bottom" ? parent.bottom : (!root.isVertical ? parent.bottom : undefined)
-                        left: root.isLeft ? parent.left : (root.isVertical ? parent.left : undefined)
-                        right: root.position === "right" ? parent.right : (root.isVertical ? parent.right : undefined)
+                        // For bottom dock: anchor to top, move down with topMargin
+                        // For top dock: anchor to bottom, move up with bottomMargin  
+                        // For left dock: anchor to right, move left with rightMargin
+                        // For right dock: anchor to left, move right with leftMargin
+                        top: root.position === "bottom" ? parent.top : (root.isTop ? undefined : (!root.isVertical ? parent.top : undefined))
+                        bottom: root.isTop ? parent.bottom : (!root.isVertical ? undefined : (root.isLeft ? undefined : parent.bottom))
+                        left: root.position === "right" ? parent.left : (root.isLeft ? undefined : (root.isVertical ? parent.left : undefined))
+                        right: root.isLeft ? parent.right : (root.isVertical ? undefined : (root.position === "right" ? undefined : parent.right))
                         horizontalCenter: !root.isVertical ? parent.horizontalCenter : undefined
                         verticalCenter: root.isVertical ? parent.verticalCenter : undefined
                     }
@@ -94,10 +98,11 @@ Scope {
                     property real hideOffset: dockRoot.reveal ? 0 : Config.options?.dock?.hoverToReveal ? (dockRoot.implicitHeight - (Config.options?.dock?.hoverRegionHeight ?? 5)) : (dockRoot.implicitHeight + 1)
                     property real hideOffsetV: dockRoot.reveal ? 0 : Config.options?.dock?.hoverToReveal ? (dockRoot.implicitWidth - (Config.options?.dock?.hoverRegionHeight ?? 5)) : (dockRoot.implicitWidth + 1)
                     
-                    anchors.topMargin: root.isTop ? -hideOffset : 0
-                    anchors.bottomMargin: root.position === "bottom" ? -hideOffset : 0
-                    anchors.leftMargin: root.isLeft ? -hideOffsetV : 0
-                    anchors.rightMargin: root.position === "right" ? -hideOffsetV : 0
+                    // Positive margins push content off-screen
+                    anchors.topMargin: root.position === "bottom" ? hideOffset : 0
+                    anchors.bottomMargin: root.isTop ? hideOffset : 0
+                    anchors.leftMargin: root.position === "right" ? hideOffsetV : 0
+                    anchors.rightMargin: root.isLeft ? hideOffsetV : 0
 
                     Behavior on anchors.topMargin { animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this) }
                     Behavior on anchors.bottomMargin { animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this) }

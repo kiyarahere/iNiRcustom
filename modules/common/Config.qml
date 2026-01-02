@@ -534,6 +534,7 @@ Singleton {
                 property real hoverRegionHeight: 2
                 property bool pinnedOnStartup: false
                 property bool hoverToReveal: true // When false, only reveals on empty workspace
+                property bool showOnDesktop: true // Show dock when no window is focused (desktop visible)
                 property bool showBackground: true
                 property bool minimizeUnfocused: false // Show dot for unfocused apps
                 property bool enableBlurGlass: true
@@ -797,6 +798,8 @@ Singleton {
                     property bool status: true
                     property bool crypto: false
                     property bool wallpaper: false
+                    // ContextCard specific
+                    property bool contextShowWeather: true
                     // Widget order (drag to reorder)
                     property list<string> widgetOrder: ["media", "week", "context", "note", "launch", "controls", "status", "crypto", "wallpaper"]
                     // Spacing between widgets (px)

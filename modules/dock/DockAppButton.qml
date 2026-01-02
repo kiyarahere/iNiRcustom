@@ -157,6 +157,7 @@ DockButton {
 
     altAction: () => {
         root.appListRoot.closeAllContextMenus()
+        root.appListRoot.contextMenuOpen = true
         contextMenu.active = true
     }
 
@@ -171,6 +172,10 @@ DockButton {
         id: contextMenu
         anchorItem: root
         anchorHovered: root.buttonHovered
+        
+        onActiveChanged: {
+            if (!active && root.appListRoot) root.appListRoot.contextMenuOpen = false
+        }
         
         model: [
             // Desktop actions (if available)

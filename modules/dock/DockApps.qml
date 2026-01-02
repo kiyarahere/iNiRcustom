@@ -21,7 +21,8 @@ Item {
 
     property Item lastHoveredButton
     property bool buttonHovered: false
-    property bool requestDockShow: previewPopup.show
+    property bool contextMenuOpen: false
+    property bool requestDockShow: previewPopup.show || contextMenuOpen
     
     // Signal to close any open context menu before opening a new one
     signal closeAllContextMenus()
