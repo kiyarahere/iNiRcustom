@@ -22,9 +22,9 @@ Singleton {
     // Transparency. The quadratic functions were derived from analysis of hand-picked transparency values.
     ColorQuantizer {
         id: wallColorQuant
-        property string wallpaperPath: Config.options.background.wallpaperPath
+        property string wallpaperPath: Config.options?.background?.wallpaperPath ?? ""
         property bool wallpaperIsVideo: wallpaperPath.endsWith(".mp4") || wallpaperPath.endsWith(".webm") || wallpaperPath.endsWith(".mkv") || wallpaperPath.endsWith(".avi") || wallpaperPath.endsWith(".mov")
-        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)
+        source: Qt.resolvedUrl(wallpaperIsVideo ? (Config.options?.background?.thumbnailPath ?? "") : (Config.options?.background?.wallpaperPath ?? ""))
         depth: 0 // 2^0 = 1 color
         rescaleSize: 10
     }
@@ -166,22 +166,36 @@ Singleton {
         // We must force lighter text to ensure readability against the blurred backdrop.
         readonly property bool _needsHighContrast: auroraEverywhere && !root._auroraLightMode
         
-        property color colSubtext: _needsHighContrast 
-            ? ColorUtils.mix(m3colors.m3onSurface, m3colors.m3onSurfaceVariant, 0.3) // 70% Primary, 30% Variant (Brighter)
-            : (root._auroraLightMode ? _inkSecondary : m3colors.m3outline)
+        // Base text colors from Material theme
+        readonly property color _baseOnSurface: m3colors.m3onSurface
+        readonly property color _baseOnSurfaceVariant: m3colors.m3onSurfaceVariant
+        
+        property color colSubtext: ColorUtils.readableSubtext(
+            _needsHighContrast ? _baseOnSurface : (root._auroraLightMode ? _inkSecondary : m3colors.m3outline),
+            colLayer1Base,
+            0.75
+        )
             
         // Layer 0
         property color colLayer0Base: m3colors.transparent ? "transparent" : ColorUtils.mix(m3colors.m3background, m3colors.m3primary, Config?.options?.appearance?.extraBackgroundTint ? 0.99 : 1)
         property color colLayer0: ColorUtils.transparentize(colLayer0Base, root.backgroundTransparency)
-        property color colOnLayer0: root._auroraLightMode ? _inkPrimary : m3colors.m3onBackground
+        property color colOnLayer0: ColorUtils.ensureReadable(
+            root._auroraLightMode ? _inkPrimary : _baseOnSurface,
+            colLayer0Base,
+            4.5
+        )
         property color colLayer0Hover: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.9, root.contentTransparency))
         property color colLayer0Active: ColorUtils.transparentize(ColorUtils.mix(colLayer0, colOnLayer0, 0.8, root.contentTransparency))
         property color colLayer0Border: ColorUtils.mix(root.m3colors.m3outlineVariant, colLayer0, 0.4)
         // Layer 1
         property color colLayer1Base: m3colors.m3surfaceContainerLow
         property color colLayer1: auroraEverywhere ? ColorUtils.transparentize(m3colors.m3surfaceContainerLow, 0.4) : ColorUtils.solveOverlayColor(colLayer0Base, colLayer1Base, 1 - root.contentTransparency)
-        property color colOnLayer1: _needsHighContrast ? m3colors.m3onSurface : (root._auroraLightMode ? _inkPrimary : m3colors.m3onSurfaceVariant) // Force Primary White in Aurora Dark
-        property color colOnLayer1Inactive: root._auroraLightMode ? _inkMuted : ColorUtils.mix(colOnLayer1, colLayer1, 0.45)
+        property color colOnLayer1: ColorUtils.ensureReadable(
+            _needsHighContrast ? _baseOnSurface : (root._auroraLightMode ? _inkPrimary : _baseOnSurfaceVariant),
+            colLayer1Base,
+            4.5
+        )
+        property color colOnLayer1Inactive: ColorUtils.readableSubtext(colOnLayer1, colLayer1Base, 0.55)
         property color colLayer1Hover: ColorUtils.transparentize(ColorUtils.mix(colLayer1, colOnLayer1, 0.92), root.contentTransparency)
         property color colLayer1Active: ColorUtils.transparentize(ColorUtils.mix(colLayer1, colOnLayer1, 0.85), root.contentTransparency)
         // Layer 2
@@ -190,20 +204,32 @@ Singleton {
         property color colLayer2Hover: ColorUtils.solveOverlayColor(colLayer1Base, ColorUtils.mix(colLayer2Base, colOnLayer2, 0.90), 1 - root.contentTransparency)
         property color colLayer2Active: ColorUtils.solveOverlayColor(colLayer1Base, ColorUtils.mix(colLayer2Base, colOnLayer2, 0.80), 1 - root.contentTransparency)
         property color colLayer2Disabled: ColorUtils.solveOverlayColor(colLayer1Base, ColorUtils.mix(colLayer2Base, m3colors.m3background, 0.8), 1 - root.contentTransparency)
-        property color colOnLayer2: _needsHighContrast ? m3colors.m3onSurface : (root._auroraLightMode ? _inkPrimary : m3colors.m3onSurface) // Force Primary White
-        property color colOnLayer2Disabled: root._auroraLightMode ? _inkMuted : ColorUtils.mix(colOnLayer2, m3colors.m3background, 0.4)
+        property color colOnLayer2: ColorUtils.ensureReadable(
+            _needsHighContrast ? _baseOnSurface : (root._auroraLightMode ? _inkPrimary : _baseOnSurface),
+            colLayer2Base,
+            4.5
+        )
+        property color colOnLayer2Disabled: ColorUtils.readableSubtext(colOnLayer2, colLayer2Base, 0.4)
         // Layer 3
         property color colLayer3Base: m3colors.m3surfaceContainerHigh
         property color colLayer3: auroraEverywhere ? ColorUtils.transparentize(m3colors.m3surfaceContainerHigh, 0.4) : ColorUtils.solveOverlayColor(colLayer2Base, colLayer3Base, 1 - root.contentTransparency)
         property color colLayer3Hover: ColorUtils.solveOverlayColor(colLayer2Base, ColorUtils.mix(colLayer3Base, colOnLayer3, 0.90), 1 - root.contentTransparency)
         property color colLayer3Active: ColorUtils.solveOverlayColor(colLayer2Base, ColorUtils.mix(colLayer3Base, colOnLayer3, 0.80), 1 - root.contentTransparency)
-        property color colOnLayer3: _needsHighContrast ? m3colors.m3onSurface : (root._auroraLightMode ? _inkPrimary : m3colors.m3onSurface) // Force Primary White
+        property color colOnLayer3: ColorUtils.ensureReadable(
+            _needsHighContrast ? _baseOnSurface : (root._auroraLightMode ? _inkPrimary : _baseOnSurface),
+            colLayer3Base,
+            4.5
+        )
         // Layer 4
         property color colLayer4Base: m3colors.m3surfaceContainerHighest
         property color colLayer4: ColorUtils.solveOverlayColor(colLayer3Base, colLayer4Base, 1 - root.contentTransparency)
         property color colLayer4Hover: ColorUtils.solveOverlayColor(colLayer3Base, ColorUtils.mix(colLayer4Base, colOnLayer4, 0.90), 1 - root.contentTransparency)
         property color colLayer4Active: ColorUtils.solveOverlayColor(colLayer3Base, ColorUtils.mix(colLayer4Base, colOnLayer4, 0.80), 1 - root.contentTransparency)
-        property color colOnLayer4: root._auroraLightMode ? _inkPrimary : m3colors.m3onSurface
+        property color colOnLayer4: ColorUtils.ensureReadable(
+            root._auroraLightMode ? _inkPrimary : _baseOnSurface,
+            colLayer4Base,
+            4.5
+        )
         // Primary
         property color colPrimary: m3colors.m3primary
         property color colOnPrimary: m3colors.m3onPrimary
@@ -279,7 +305,7 @@ Singleton {
     property real fontSizeScale: Config.options?.appearance?.typography?.sizeScale ?? 1.0
 
     // Theme Metadata Logic
-    readonly property var activeThemePreset: ThemePresets.getPreset(Config.options.appearance.theme)
+    readonly property var activeThemePreset: ThemePresets.getPreset(Config.options?.appearance?.theme ?? "auto")
     readonly property var _themeMeta: activeThemePreset.meta || {}
     
     // Font Strategy:
@@ -653,5 +679,19 @@ Singleton {
     }
 
     syntaxHighlightingTheme: root.m3colors.darkmode ? "Monokai" : "ayu Light"
+
+    // Toggle dark mode - switches between light and dark variants of current theme
+    function toggleDarkMode(): void {
+        const newMode = !root.m3colors.darkmode
+        // Update the custom theme darkmode setting
+        Config.setNestedValue("appearance.customTheme.darkmode", newMode)
+        // If using auto theme, regenerate from wallpaper with new mode
+        if (ThemeService.isAutoTheme) {
+            ThemeService.regenerateAutoTheme()
+        } else {
+            // For preset themes, just toggle the darkmode flag directly
+            root.m3colors.darkmode = newMode
+        }
+    }
 }
 

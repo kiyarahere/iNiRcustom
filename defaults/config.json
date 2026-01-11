@@ -19,7 +19,23 @@
   },
   "appearance": {
     "extraBackgroundTint": true,
+    "softenColors": true,
     "fakeScreenRounding": 0,
+    "recentThemes": [],
+    "favoriteThemes": [],
+    "globalStyleCornerStyles": {
+      "material": 1,
+      "cards": 3,
+      "aurora": 0,
+      "inir": 1
+    },
+    "themeSchedule": {
+      "enabled": false,
+      "dayTheme": "auto",
+      "nightTheme": "auto",
+      "dayStart": "06:00",
+      "nightStart": "18:00"
+    },
     "palette": {
       "type": "auto"
     },
@@ -34,10 +50,15 @@
       "enableQtApps": true,
       "enableTerminal": true,
       "terminalGenerationProps": {
-        "forceDarkMode": true,
+        "forceDarkMode": false,
         "harmonizeThreshold": 100,
-        "harmony": 0.8,
-        "termFgBoost": 0.5
+        "harmony": 0.6,
+        "termFgBoost": 0.35
+      },
+      "terminalColorAdjustments": {
+        "saturation": 0.40,
+        "brightness": 0.55,
+        "harmony": 0.15
       },
       "terminals": {
         "kitty": true,
@@ -46,6 +67,18 @@
         "wezterm": true,
         "ghostty": true,
         "konsole": true
+      }
+    },
+    "typography": {
+      "mainFont": "Roboto Flex",
+      "titleFont": "Gabarito",
+      "monospaceFont": "JetBrainsMono Nerd Font",
+      "sizeScale": 1.0,
+      "syncWithSystem": true,
+      "variableAxes": {
+        "wght": 300,
+        "wdth": 105,
+        "grad": 175
       }
     }
   },
@@ -781,7 +814,7 @@
         "vertical": false,
         "widgetsFactor": 0.7
       },
-    "widgets": {
+      "widgets": {
         "clock": {
           "enable": false
         },

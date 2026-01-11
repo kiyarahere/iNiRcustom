@@ -137,6 +137,15 @@ Singleton {
             property JsonObject appearance: JsonObject {
                 property string theme: "auto" // Theme preset ID: "auto" for wallpaper-based, or preset name like "gruvbox-dark", "catppuccin-mocha", "custom", etc.
                 property string globalStyle: "material" // "material" | "cards" | "aurora" | "inir"
+                property list<string> recentThemes: []  // Last 4 used themes
+                property list<string> favoriteThemes: []  // User's favorite themes
+                property JsonObject themeSchedule: JsonObject {
+                    property bool enabled: false
+                    property string dayTheme: "auto"
+                    property string nightTheme: "auto"
+                    property string dayStart: "06:00"
+                    property string nightStart: "18:00"
+                }
                 // Corner style preference per global style (0=Hug, 1=Float, 2=Rect, 3=Card)
                 property JsonObject globalStyleCornerStyles: JsonObject {
                     property int material: 1
@@ -145,6 +154,7 @@ Singleton {
                     property int inir: 1
                 }
                 property bool extraBackgroundTint: true
+                property bool softenColors: true
                 property JsonObject customTheme: JsonObject {
                     property bool darkmode: true
                     property string m3background: "#282828"
@@ -227,6 +237,11 @@ Singleton {
                         property real termFgBoost: 0.35
                         property bool forceDarkMode: false
                     }
+                    property JsonObject terminalColorAdjustments: JsonObject {
+                        property real saturation: 0.40  // 0.0 - 1.0
+                        property real brightness: 0.55  // 0.0 - 1.0 (lightness for dark mode)
+                        property real harmony: 0.15     // 0.0 - 1.0 (how much to shift towards primary)
+                    }
                 }
                 property JsonObject palette: JsonObject {
                     property string type: "auto" // Allowed: auto, scheme-content, scheme-expressive, scheme-fidelity, scheme-fruit-salad, scheme-monochrome, scheme-neutral, scheme-rainbow, scheme-tonal-spot
@@ -236,6 +251,7 @@ Singleton {
                     property string titleFont: "Gabarito"
                     property string monospaceFont: "JetBrainsMono Nerd Font"
                     property real sizeScale: 1.0
+                    property bool syncWithSystem: true // Sync fonts with GTK/KDE apps
                     property JsonObject variableAxes: JsonObject {
                         property int wght: 300
                         property int wdth: 105

@@ -10,20 +10,34 @@ import qs.services
 Singleton {
     id: root
 
+    // Available tags for filtering
+    readonly property var availableTags: [
+        { id: "dark", name: Translation.tr("Dark"), icon: "dark_mode" },
+        { id: "light", name: Translation.tr("Light"), icon: "light_mode" },
+        { id: "pastel", name: Translation.tr("Pastel"), icon: "palette" },
+        { id: "vibrant", name: Translation.tr("Vibrant"), icon: "colorize" },
+        { id: "minimal", name: Translation.tr("Minimal"), icon: "remove" },
+        { id: "retro", name: Translation.tr("Retro"), icon: "history" },
+        { id: "nature", name: Translation.tr("Nature"), icon: "eco" },
+        { id: "neon", name: Translation.tr("Neon"), icon: "bolt" }
+    ]
+
     readonly property var presets: [
         {
             id: "auto",
             name: "Auto (Wallpaper)",
             description: "Colors generated from your wallpaper",
             icon: "wallpaper",
-            colors: null
+            colors: null,
+            tags: []
         },
         {
             id: "custom",
             name: "Custom",
             description: "Your personalized color palette",
             icon: "edit",
-            colors: "custom"
+            colors: "custom",
+            tags: []
         },
         {
             id: "angel",
@@ -31,9 +45,10 @@ Singleton {
             description: "Celestial twilight with warm golden halos",
             icon: "brightness_7",
             colors: angelColors,
+            tags: ["dark", "pastel"],
             meta: {
-                roundingScale: 1.2, // Softer curves
-                fontStyle: "serif" // Preference (logic handled in Appearance)
+                roundingScale: 1.2,
+                fontStyle: "serif"
             }
         },
         {
@@ -42,6 +57,7 @@ Singleton {
             description: "Ethereal dawn with warm cream tones",
             icon: "wb_twilight",
             colors: angelLightColors,
+            tags: ["light", "pastel"],
             meta: {
                 roundingScale: 1.2
             }
@@ -52,8 +68,9 @@ Singleton {
             description: "Pastel colors on dark backgrounds",
             icon: "palette",
             colors: catppuccinMochaColors,
+            tags: ["dark", "pastel"],
             meta: {
-                roundingScale: 1.15 // Soft and cozy
+                roundingScale: 1.15
             }
         },
         {
@@ -62,6 +79,7 @@ Singleton {
             description: "Pastel colors on light backgrounds",
             icon: "palette",
             colors: catppuccinLatteColors,
+            tags: ["light", "pastel"],
             meta: {
                 roundingScale: 1.15
             }
@@ -71,7 +89,8 @@ Singleton {
             name: "Material Black",
             description: "Pure black with elegant muted accents",
             icon: "palette",
-            colors: materialBlackColors
+            colors: materialBlackColors,
+            tags: ["dark", "minimal"]
         },
         {
             id: "gruvbox-material",
@@ -79,9 +98,10 @@ Singleton {
             description: "Gruvbox with Material Design refinements",
             icon: "palette",
             colors: gruvboxMaterialColors,
+            tags: ["dark", "retro"],
             meta: {
-                roundingScale: 0.8, // Slightly squared for retro feel
-                fontStyle: "mono"   // Code-centric origin
+                roundingScale: 0.8,
+                fontStyle: "mono"
             }
         },
         {
@@ -90,8 +110,9 @@ Singleton {
             description: "Arctic blue-gray tones",
             icon: "palette",
             colors: nordColors,
+            tags: ["dark", "minimal"],
             meta: {
-                roundingScale: 0.9 // Crisp and cool
+                roundingScale: 0.9
             }
         },
 
@@ -101,8 +122,9 @@ Singleton {
             description: "Inspired by Katsushika Hokusai's Great Wave",
             icon: "tsunami",
             colors: kanagawaColors,
+            tags: ["dark", "nature"],
             meta: {
-                roundingScale: 1.0 // Balanced traditional
+                roundingScale: 1.0
             }
         },
         {
@@ -111,6 +133,7 @@ Singleton {
             description: "Darker variant with dragon ink tones",
             icon: "whatshot",
             colors: kanagawaDragonColors,
+            tags: ["dark", "vibrant"],
             meta: {
                 roundingScale: 1.0
             }
@@ -121,9 +144,10 @@ Singleton {
             description: "Deep crimson and steel inspired by bushido",
             icon: "swords",
             colors: samuraiColors,
+            tags: ["dark", "vibrant"],
             meta: {
-                roundingScale: 0.4, // Sharp, blade-like edges
-                borderWidthScale: 1.2 // Defined steel borders
+                roundingScale: 0.4,
+                borderWidthScale: 1.2
             }
         },
         {
@@ -132,9 +156,10 @@ Singleton {
             description: "Neon city lights on midnight blue",
             icon: "location_city",
             colors: tokyoNightColors,
+            tags: ["dark", "neon"],
             meta: {
                 roundingScale: 1.0,
-                borderWidthScale: 1.1 // Subtle neon glow
+                borderWidthScale: 1.1
             }
         },
         {
@@ -143,8 +168,9 @@ Singleton {
             description: "Cherry blossom pink on soft cream",
             icon: "local_florist",
             colors: sakuraColors,
+            tags: ["light", "pastel", "nature"],
             meta: {
-                roundingScale: 1.3 // Soft petals
+                roundingScale: 1.3
             }
         },
         {
@@ -153,8 +179,9 @@ Singleton {
             description: "Tranquil moss greens and stone grays",
             icon: "spa",
             colors: zenGardenColors,
+            tags: ["light", "nature", "minimal"],
             meta: {
-                roundingScale: 1.5, // Pebble-like
+                roundingScale: 1.5,
                 fontStyle: "sans"
             }
         },
@@ -163,7 +190,8 @@ Singleton {
             name: "Everforest",
             description: "Natural, warm, and organic",
             icon: "forest",
-            colors: everforestColors
+            colors: everforestColors,
+            tags: ["dark", "nature"]
         },
         {
             id: "ayu",
@@ -171,6 +199,7 @@ Singleton {
             description: "Bright and elegant",
             icon: "wb_sunny",
             colors: ayuColors,
+            tags: ["dark", "minimal"],
             meta: {
                 roundingScale: 1.0
             }
@@ -181,6 +210,7 @@ Singleton {
             description: "Soft, warm high-contrast dark",
             icon: "coffee",
             colors: catppuccinMacchiatoColors,
+            tags: ["dark", "pastel"],
             meta: {
                 roundingScale: 1.15
             }
@@ -191,10 +221,11 @@ Singleton {
             description: "Follow the white rabbit",
             icon: "terminal",
             colors: matrixColors,
+            tags: ["dark", "neon", "retro"],
             meta: {
-                roundingScale: 0, // Sharp corners
-                fontStyle: "mono", // Force monospace
-                borderWidthScale: 2.0 // Thicker borders
+                roundingScale: 0,
+                fontStyle: "mono",
+                borderWidthScale: 2.0
             }
         },
         {
@@ -203,8 +234,9 @@ Singleton {
             description: "Atom-inspired dark theme",
             icon: "code",
             colors: oneDarkColors,
+            tags: ["dark", "minimal"],
             meta: {
-                fontStyle: "mono", // Editor feel
+                fontStyle: "mono",
                 roundingScale: 0.9
             }
         },
@@ -214,9 +246,10 @@ Singleton {
             description: "Retro groove color scheme (Hard)",
             icon: "dataset",
             colors: gruvboxDarkColors,
+            tags: ["dark", "retro"],
             meta: {
                 fontStyle: "mono",
-                roundingScale: 0.7, // Harder edges for "Hard" variant
+                roundingScale: 0.7,
                 borderWidthScale: 1.1
             }
         },
@@ -226,6 +259,7 @@ Singleton {
             description: "Soft, warm pastel palette",
             icon: "icecream",
             colors: catppuccinFrappeColors,
+            tags: ["dark", "pastel"],
             meta: {
                 roundingScale: 1.15
             }
@@ -236,6 +270,7 @@ Singleton {
             description: "Dark theme for vampires",
             icon: "nightlight",
             colors: draculaColors,
+            tags: ["dark", "vibrant"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 1.0
@@ -247,8 +282,9 @@ Singleton {
             description: "Precision colors for machines and people",
             icon: "wb_sunny",
             colors: solarizedDarkColors,
+            tags: ["dark", "minimal"],
             meta: {
-                fontStyle: "mono", // Terminal classic
+                fontStyle: "mono",
                 roundingScale: 0.8
             }
         },
@@ -258,6 +294,7 @@ Singleton {
             description: "Focus and code",
             icon: "filter_vintage",
             colors: monokaiProColors,
+            tags: ["dark", "vibrant"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 0.9
@@ -269,8 +306,9 @@ Singleton {
             description: "All natural pine, faux fur and bits of gold",
             icon: "local_florist",
             colors: rosePineColors,
+            tags: ["dark", "pastel", "nature"],
             meta: {
-                roundingScale: 1.25 // Very organic
+                roundingScale: 1.25
             }
         },
         {
@@ -279,6 +317,7 @@ Singleton {
             description: "The official OpenCode theme",
             icon: "terminal",
             colors: opencodeColors,
+            tags: ["dark", "minimal"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 1.0
@@ -290,9 +329,10 @@ Singleton {
             description: "Retro neon aesthetics",
             icon: "music_note",
             colors: synthwave84Colors,
+            tags: ["dark", "neon", "retro"],
             meta: {
-                roundingScale: 0.2, // Very slight rounding
-                borderWidthScale: 1.5 // Neon borders
+                roundingScale: 0.2,
+                borderWidthScale: 1.5
             }
         },
         {
@@ -301,6 +341,7 @@ Singleton {
             description: "For the night owls",
             icon: "nights_stay",
             colors: nightOwlColors,
+            tags: ["dark", "minimal"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 1.0
@@ -312,6 +353,7 @@ Singleton {
             description: "Blue perfection",
             icon: "water_drop",
             colors: cobalt2Colors,
+            tags: ["dark", "vibrant"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 1.0
@@ -323,9 +365,10 @@ Singleton {
             description: "The developer standard",
             icon: "code",
             colors: githubDarkColors,
+            tags: ["dark", "minimal"],
             meta: {
                 fontStyle: "mono",
-                roundingScale: 0.8 // GitHub UI is moderately squared
+                roundingScale: 0.8
             }
         },
         {
@@ -334,8 +377,9 @@ Singleton {
             description: "Minimalist and high contrast",
             icon: "change_history",
             colors: vercelColors,
+            tags: ["dark", "minimal"],
             meta: {
-                roundingScale: 0.6, // Geometric
+                roundingScale: 0.6,
                 fontStyle: "sans"
             }
         },
@@ -344,7 +388,8 @@ Singleton {
             name: "Zenburn",
             description: "Low contrast earth tones",
             icon: "contrast",
-            colors: zenburnColors
+            colors: zenburnColors,
+            tags: ["dark", "nature"]
         },
         {
             id: "mercury",
@@ -352,8 +397,9 @@ Singleton {
             description: "Cold and metallic",
             icon: "science",
             colors: mercuryColors,
+            tags: ["dark", "minimal"],
             meta: {
-                roundingScale: 0.8, // Tech feel
+                roundingScale: 0.8,
                 borderWidthScale: 1.1
             }
         },
@@ -363,9 +409,10 @@ Singleton {
             description: "Inky blacks and warm paper",
             icon: "history_edu",
             colors: flexokiColors,
+            tags: ["dark", "nature"],
             meta: {
-                roundingScale: 1.1, // Paper corners
-                fontStyle: "serif" // Ideally serif, falls back to sans if unavailable
+                roundingScale: 1.1,
+                fontStyle: "serif"
             }
         },
         {
@@ -374,6 +421,7 @@ Singleton {
             description: "Modern IDE aesthetic",
             icon: "smart_toy",
             colors: cursorColors,
+            tags: ["dark", "minimal"],
             meta: {
                 roundingScale: 0.9,
                 fontStyle: "sans"
@@ -385,6 +433,7 @@ Singleton {
             description: "Deep oceanic blue",
             icon: "sailing",
             colors: materialOceanColors,
+            tags: ["dark", "vibrant"],
             meta: {
                 roundingScale: 1.0
             }
@@ -395,6 +444,7 @@ Singleton {
             description: "Elegant and mild",
             icon: "night_shelter",
             colors: palenightColors,
+            tags: ["dark", "pastel"],
             meta: {
                 roundingScale: 1.0
             }
@@ -405,6 +455,7 @@ Singleton {
             description: "Fresh jade green",
             icon: "park",
             colors: osakaJadeColors,
+            tags: ["dark", "nature"],
             meta: {
                 roundingScale: 1.1
             }
@@ -415,6 +466,7 @@ Singleton {
             description: "The classic",
             icon: "cookie",
             colors: monokaiColors,
+            tags: ["dark", "vibrant", "retro"],
             meta: {
                 fontStyle: "mono",
                 roundingScale: 0.8
@@ -426,8 +478,9 @@ Singleton {
             description: "Dark and sophisticated",
             icon: "church",
             colors: vesperColors,
+            tags: ["dark", "minimal"],
             meta: {
-                fontStyle: "mono" // Editorial/Technical feel
+                fontStyle: "mono"
             }
         },
         {
@@ -436,6 +489,7 @@ Singleton {
             description: "Vibrant orange focus",
             icon: "local_fire_department",
             colors: orngColors,
+            tags: ["dark", "vibrant", "neon"],
             meta: {
                 roundingScale: 0.8
             }
@@ -446,9 +500,10 @@ Singleton {
             description: "Transparent orange focus",
             icon: "blur_on",
             colors: lucentOrngColors,
+            tags: ["dark", "vibrant", "neon"],
             meta: {
-                roundingScale: 0.5, // Tighter glass
-                borderWidthScale: 0.5 // Thinner borders
+                roundingScale: 0.5,
+                borderWidthScale: 0.5
             }
         }
     ]
@@ -2838,6 +2893,27 @@ Singleton {
         return presets[0];
     }
 
+    function softenColors(colorsObj) {
+        if (!colorsObj) return colorsObj;
+        var newColors = {};
+        var keys = Object.keys(colorsObj);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var val = colorsObj[key];
+            // Check if property is a color string
+            if (typeof val === "string" && val.startsWith("#")) {
+                var c = Qt.color(val);
+                // Only soften if it has significant saturation (>5%)
+                if (c.hslSaturation > 0.05) {
+                    var newSat = c.hslSaturation * 0.60;
+                    val = Qt.hsla(c.hslHue, newSat, c.hslLightness, c.a).toString();
+                }
+            }
+            newColors[key] = val;
+        }
+        return newColors;
+    }
+
     function applyPreset(id, applyExternal = true) {
         console.log("[ThemePresets] Applying preset:", id);
         const preset = getPreset(id);
@@ -2847,7 +2923,12 @@ Singleton {
         }
         console.log("[ThemePresets] Applying colors to Appearance.m3colors");
         
-        const c = preset.colors === "custom" ? Config.options.appearance.customTheme : preset.colors;
+        var cSource = preset.colors === "custom" ? (Config.options?.appearance?.customTheme ?? {}) : preset.colors;
+        
+        // Soften colors for built-in presets (not custom) if enabled in config
+        var shouldSoften = (Config.options?.appearance?.softenColors ?? true) && (id !== "custom");
+        var c = shouldSoften ? softenColors(cSource) : cSource;
+
         const m3 = Appearance.m3colors;
         
         m3.darkmode = c.darkmode;
@@ -2907,30 +2988,230 @@ Singleton {
         m3.m3onSuccessContainer = c.m3onSuccessContainer;
         
         if (applyExternal) {
-            // Apply to GTK apps (Nautilus, etc)
-            applyGtkTheme(c);
+            applyExternalThemes(c);
         }
         
         return true;
     }
     
-    function applyGtkTheme(c) {
-        // First, generate colors.json for Vesktop theme generation
-        generateColorsJson(c);
+    function applyExternalThemes(c) {
+        const enableAppsAndShell = Config.options?.appearance?.wallpaperTheming?.enableAppsAndShell ?? true;
+        const enableVesktop = Config.options?.appearance?.wallpaperTheming?.enableVesktop ?? true;
+        const enableTerminal = Config.options?.appearance?.wallpaperTheming?.enableTerminal ?? true;
         
-        // Small delay to ensure colors.json is written before apply-gtk-theme.sh reads it
+        // Generate colors.json for Vesktop (if enabled)
+        if (enableVesktop) {
+            generateColorsJson(c);
+            Qt.callLater(() => {
+                Quickshell.execDetached([
+                    "/usr/bin/python3",
+                    Directories.scriptPath + "/colors/system24_palette.py"
+                ]);
+            });
+        }
+        
+        // Apply GTK theme (if enabled)
+        if (enableAppsAndShell) {
+            Qt.callLater(() => {
+                const script = Directories.scriptPath + "/colors/apply-gtk-theme.sh";
+                Quickshell.execDetached([
+                    script,
+                    c.m3background,
+                    c.m3onBackground,
+                    c.m3primary,
+                    c.m3onPrimary,
+                    c.m3surface,
+                    c.m3surfaceDim
+                ]);
+            });
+        }
+        
+        // Apply terminal colors (if enabled)
+        if (enableTerminal) {
+            applyTerminalColors(c);
+        }
+    }
+    
+    function applyTerminalColors(c) {
+        // Generate material_colors.scss from preset colors for terminal theming
+        const scssContent = generateScssFromColors(c);
+        const scssPath = Directories.state + "/user/generated/material_colors.scss";
+        
+        // Write scss file
+        presetScssFileView.path = Qt.resolvedUrl(scssPath);
+        presetScssFileView.setText(scssContent);
+        
+        // Run applycolor.sh to apply terminal colors
         Qt.callLater(() => {
-            const script = Directories.scriptPath + "/colors/apply-gtk-theme.sh";
             Quickshell.execDetached([
-                script,
-                c.m3background,
-                c.m3onBackground,
-                c.m3primary,
-                c.m3onPrimary,
-                c.m3surface,
-                c.m3surfaceDim
+                "/usr/bin/bash",
+                Directories.scriptPath + "/colors/applycolor.sh"
             ]);
         });
+    }
+    
+    function generateScssFromColors(c) {
+        // Generate SCSS format matching generate_colors_material.py output
+        let scss = `$darkmode: ${c.darkmode};\n`;
+        scss += `$transparent: ${c.transparent ?? false};\n`;
+        
+        // Map m3* properties to scss variables
+        const colorMap = {
+            "background": c.m3background,
+            "onBackground": c.m3onBackground,
+            "surface": c.m3surface,
+            "surfaceDim": c.m3surfaceDim,
+            "surfaceBright": c.m3surfaceBright,
+            "surfaceContainerLowest": c.m3surfaceContainerLowest,
+            "surfaceContainerLow": c.m3surfaceContainerLow,
+            "surfaceContainer": c.m3surfaceContainer,
+            "surfaceContainerHigh": c.m3surfaceContainerHigh,
+            "surfaceContainerHighest": c.m3surfaceContainerHighest,
+            "onSurface": c.m3onSurface,
+            "surfaceVariant": c.m3surfaceVariant,
+            "onSurfaceVariant": c.m3onSurfaceVariant,
+            "inverseSurface": c.m3inverseSurface,
+            "inverseOnSurface": c.m3inverseOnSurface,
+            "outline": c.m3outline,
+            "outlineVariant": c.m3outlineVariant,
+            "shadow": c.m3shadow,
+            "scrim": c.m3scrim,
+            "surfaceTint": c.m3surfaceTint,
+            "primary": c.m3primary,
+            "onPrimary": c.m3onPrimary,
+            "primaryContainer": c.m3primaryContainer,
+            "onPrimaryContainer": c.m3onPrimaryContainer,
+            "inversePrimary": c.m3inversePrimary,
+            "secondary": c.m3secondary,
+            "onSecondary": c.m3onSecondary,
+            "secondaryContainer": c.m3secondaryContainer,
+            "onSecondaryContainer": c.m3onSecondaryContainer,
+            "tertiary": c.m3tertiary,
+            "onTertiary": c.m3onTertiary,
+            "tertiaryContainer": c.m3tertiaryContainer,
+            "onTertiaryContainer": c.m3onTertiaryContainer,
+            "error": c.m3error,
+            "onError": c.m3onError,
+            "errorContainer": c.m3errorContainer,
+            "onErrorContainer": c.m3onErrorContainer,
+        };
+        
+        for (const [key, value] of Object.entries(colorMap)) {
+            if (value) scss += `$${key}: ${value};\n`;
+        }
+        
+        // Generate terminal colors from material palette
+        // Using the theme's actual colors with configurable adjustments
+        const isDark = c.darkmode;
+        
+        // Get user adjustments from config
+        const termAdj = Config.options?.appearance?.wallpaperTheming?.terminalColorAdjustments ?? {};
+        const userSaturation = termAdj.saturation ?? 0.40;
+        const userBrightness = termAdj.brightness ?? 0.55;
+        const userHarmony = termAdj.harmony ?? 0.15;
+        
+        // Get primary color for harmonization
+        const primaryColor = Qt.color(c.m3primary);
+        const primaryHue = primaryColor.hslHue;
+        const primarySat = primaryColor.hslSaturation;
+
+        // Helper to convert Qt color to hex
+        function colorToHex(col) {
+            const r = Math.round(col.r * 255);
+            const g = Math.round(col.g * 255);
+            const b = Math.round(col.b * 255);
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+
+        // Helper to create harmonized color with fixed semantic hue
+        function harmonizedColor(targetHue, saturation, lightness, harmony) {
+            let finalHue = targetHue;
+            if (primarySat > 0.08 && harmony > 0) {
+                let hueDiff = primaryHue - targetHue;
+                if (hueDiff > 0.5) hueDiff -= 1;
+                if (hueDiff < -0.5) hueDiff += 1;
+                finalHue = (targetHue + hueDiff * harmony + 1) % 1;
+            }
+            // Clamp saturation and lightness to valid ranges
+            const clampedSat = Math.max(0.20, Math.min(0.55, saturation));
+            const clampedLight = Math.max(0.30, Math.min(0.70, lightness));
+            const col = Qt.hsla(finalHue, clampedSat, clampedLight, 1.0);
+            return colorToHex(col);
+        }
+        
+        // Background colors - directly from theme (use surfaceContainerLow for slightly lighter bg)
+        const bgColor = Qt.color(c.m3surfaceContainerLow ?? c.m3background);
+        const term0 = colorToHex(bgColor);
+        
+        // Foreground colors - from theme
+        const fgColor = Qt.color(c.m3onBackground);
+        const term15 = colorToHex(fgColor);
+        
+        // Gray tones - from theme's surface variant and outline
+        const term7 = colorToHex(Qt.color(c.m3onSurfaceVariant));
+        const term8 = colorToHex(Qt.color(c.m3outline));
+        
+        // Calculate lightness values based on user brightness setting
+        // For dark mode: higher brightness = lighter colors (0.45-0.65 range)
+        // For light mode: higher brightness = darker colors (0.35-0.55 range)
+        const normalLight = isDark ? (0.40 + userBrightness * 0.30) : (0.60 - userBrightness * 0.30);
+        const brightLight = isDark ? (0.50 + userBrightness * 0.30) : (0.50 - userBrightness * 0.30);
+        
+        // Saturation values - use user setting directly
+        const normalSat = userSaturation;
+        const brightSat = Math.min(0.55, userSaturation + 0.05);
+        
+        // Red - always use semantic red (error colors often have wrong hue)
+        const term1 = harmonizedColor(0.98, normalSat, normalLight, userHarmony);
+        const term9 = harmonizedColor(0.98, brightSat, brightLight, userHarmony);
+        
+        // Green - semantic green harmonized with theme
+        const term2 = harmonizedColor(0.36, normalSat, normalLight, userHarmony);
+        const term10 = harmonizedColor(0.36, brightSat, brightLight, userHarmony);
+        
+        // Yellow - semantic yellow/orange
+        const term3 = harmonizedColor(0.12, normalSat + 0.10, normalLight, userHarmony);
+        const term11 = harmonizedColor(0.12, brightSat + 0.10, brightLight, userHarmony);
+        
+        // Blue - semantic blue
+        const term4 = harmonizedColor(0.58, normalSat, normalLight, userHarmony);
+        const term12 = harmonizedColor(0.58, brightSat, brightLight, userHarmony);
+        
+        // Magenta - semantic magenta/purple
+        const term5 = harmonizedColor(0.85, normalSat, normalLight, userHarmony);
+        const term13 = harmonizedColor(0.85, brightSat, brightLight, userHarmony);
+        
+        // Cyan - semantic cyan
+        const term6 = harmonizedColor(0.48, normalSat, normalLight, userHarmony);
+        const term14 = harmonizedColor(0.48, brightSat, brightLight, userHarmony);
+        
+        scss += `$term0: ${term0};\n`;
+        scss += `$term1: ${term1};\n`;
+        scss += `$term2: ${term2};\n`;
+        scss += `$term3: ${term3};\n`;
+        scss += `$term4: ${term4};\n`;
+        scss += `$term5: ${term5};\n`;
+        scss += `$term6: ${term6};\n`;
+        scss += `$term7: ${term7};\n`;
+        scss += `$term8: ${term8};\n`;
+        scss += `$term9: ${term9};\n`;
+        scss += `$term10: ${term10};\n`;
+        scss += `$term11: ${term11};\n`;
+        scss += `$term12: ${term12};\n`;
+        scss += `$term13: ${term13};\n`;
+        scss += `$term14: ${term14};\n`;
+        scss += `$term15: ${term15};\n`;
+        
+        return scss;
+    }
+    
+    FileView {
+        id: presetScssFileView
+    }
+    
+    function applyGtkTheme(c) {
+        // DEPRECATED: Use applyExternalThemes instead
+        applyExternalThemes(c);
     }
     
     function generateColorsJson(c) {
@@ -2984,6 +3265,158 @@ Singleton {
 
     FileView {
         id: colorsJsonFileView
+    }
+
+    // ========== Hover Preview System ==========
+    property var _previewBackup: null
+    property bool _isPreviewing: false
+
+    function captureCurrentColors() {
+        const m3 = Appearance.m3colors;
+        return {
+            darkmode: m3.darkmode,
+            transparent: m3.transparent,
+            m3background: m3.m3background,
+            m3onBackground: m3.m3onBackground,
+            m3surface: m3.m3surface,
+            m3surfaceDim: m3.m3surfaceDim,
+            m3surfaceBright: m3.m3surfaceBright,
+            m3surfaceContainerLowest: m3.m3surfaceContainerLowest,
+            m3surfaceContainerLow: m3.m3surfaceContainerLow,
+            m3surfaceContainer: m3.m3surfaceContainer,
+            m3surfaceContainerHigh: m3.m3surfaceContainerHigh,
+            m3surfaceContainerHighest: m3.m3surfaceContainerHighest,
+            m3onSurface: m3.m3onSurface,
+            m3surfaceVariant: m3.m3surfaceVariant,
+            m3onSurfaceVariant: m3.m3onSurfaceVariant,
+            m3inverseSurface: m3.m3inverseSurface,
+            m3inverseOnSurface: m3.m3inverseOnSurface,
+            m3outline: m3.m3outline,
+            m3outlineVariant: m3.m3outlineVariant,
+            m3shadow: m3.m3shadow,
+            m3scrim: m3.m3scrim,
+            m3surfaceTint: m3.m3surfaceTint,
+            m3primary: m3.m3primary,
+            m3onPrimary: m3.m3onPrimary,
+            m3primaryContainer: m3.m3primaryContainer,
+            m3onPrimaryContainer: m3.m3onPrimaryContainer,
+            m3inversePrimary: m3.m3inversePrimary,
+            m3secondary: m3.m3secondary,
+            m3onSecondary: m3.m3onSecondary,
+            m3secondaryContainer: m3.m3secondaryContainer,
+            m3onSecondaryContainer: m3.m3onSecondaryContainer,
+            m3tertiary: m3.m3tertiary,
+            m3onTertiary: m3.m3onTertiary,
+            m3tertiaryContainer: m3.m3tertiaryContainer,
+            m3onTertiaryContainer: m3.m3onTertiaryContainer,
+            m3error: m3.m3error,
+            m3onError: m3.m3onError,
+            m3errorContainer: m3.m3errorContainer,
+            m3onErrorContainer: m3.m3onErrorContainer,
+            m3primaryFixed: m3.m3primaryFixed,
+            m3primaryFixedDim: m3.m3primaryFixedDim,
+            m3onPrimaryFixed: m3.m3onPrimaryFixed,
+            m3onPrimaryFixedVariant: m3.m3onPrimaryFixedVariant,
+            m3secondaryFixed: m3.m3secondaryFixed,
+            m3secondaryFixedDim: m3.m3secondaryFixedDim,
+            m3onSecondaryFixed: m3.m3onSecondaryFixed,
+            m3onSecondaryFixedVariant: m3.m3onSecondaryFixedVariant,
+            m3tertiaryFixed: m3.m3tertiaryFixed,
+            m3tertiaryFixedDim: m3.m3tertiaryFixedDim,
+            m3onTertiaryFixed: m3.m3onTertiaryFixed,
+            m3onTertiaryFixedVariant: m3.m3onTertiaryFixedVariant,
+            m3success: m3.m3success,
+            m3onSuccess: m3.m3onSuccess,
+            m3successContainer: m3.m3successContainer,
+            m3onSuccessContainer: m3.m3onSuccessContainer
+        };
+    }
+
+    function previewPreset(id) {
+        if (!id || id === "auto") return;
+        
+        const preset = getPreset(id);
+        if (!preset?.colors) return;
+        
+        // Capture current colors if not already previewing
+        if (!_isPreviewing) {
+            _previewBackup = captureCurrentColors();
+            _isPreviewing = true;
+        }
+        
+        // Apply preview (no external apps)
+        var cSource = preset.colors === "custom" ? Config.options?.appearance?.customTheme : preset.colors;
+        var shouldSoften = (Config.options?.appearance?.softenColors ?? true) && (id !== "custom");
+        var c = shouldSoften ? softenColors(cSource) : cSource;
+        
+        applyColorsToAppearance(c);
+    }
+
+    function restoreFromPreview() {
+        if (!_isPreviewing || !_previewBackup) return;
+        
+        applyColorsToAppearance(_previewBackup);
+        _previewBackup = null;
+        _isPreviewing = false;
+    }
+
+    function applyColorsToAppearance(c) {
+        const m3 = Appearance.m3colors;
+        m3.darkmode = c.darkmode;
+        m3.transparent = c.transparent ?? false;
+        m3.m3background = c.m3background;
+        m3.m3onBackground = c.m3onBackground;
+        m3.m3surface = c.m3surface;
+        m3.m3surfaceDim = c.m3surfaceDim;
+        m3.m3surfaceBright = c.m3surfaceBright;
+        m3.m3surfaceContainerLowest = c.m3surfaceContainerLowest;
+        m3.m3surfaceContainerLow = c.m3surfaceContainerLow;
+        m3.m3surfaceContainer = c.m3surfaceContainer;
+        m3.m3surfaceContainerHigh = c.m3surfaceContainerHigh;
+        m3.m3surfaceContainerHighest = c.m3surfaceContainerHighest;
+        m3.m3onSurface = c.m3onSurface;
+        m3.m3surfaceVariant = c.m3surfaceVariant;
+        m3.m3onSurfaceVariant = c.m3onSurfaceVariant;
+        m3.m3inverseSurface = c.m3inverseSurface;
+        m3.m3inverseOnSurface = c.m3inverseOnSurface;
+        m3.m3outline = c.m3outline;
+        m3.m3outlineVariant = c.m3outlineVariant;
+        m3.m3shadow = c.m3shadow;
+        m3.m3scrim = c.m3scrim;
+        m3.m3surfaceTint = c.m3surfaceTint;
+        m3.m3primary = c.m3primary;
+        m3.m3onPrimary = c.m3onPrimary;
+        m3.m3primaryContainer = c.m3primaryContainer;
+        m3.m3onPrimaryContainer = c.m3onPrimaryContainer;
+        m3.m3inversePrimary = c.m3inversePrimary;
+        m3.m3secondary = c.m3secondary;
+        m3.m3onSecondary = c.m3onSecondary;
+        m3.m3secondaryContainer = c.m3secondaryContainer;
+        m3.m3onSecondaryContainer = c.m3onSecondaryContainer;
+        m3.m3tertiary = c.m3tertiary;
+        m3.m3onTertiary = c.m3onTertiary;
+        m3.m3tertiaryContainer = c.m3tertiaryContainer;
+        m3.m3onTertiaryContainer = c.m3onTertiaryContainer;
+        m3.m3error = c.m3error;
+        m3.m3onError = c.m3onError;
+        m3.m3errorContainer = c.m3errorContainer;
+        m3.m3onErrorContainer = c.m3onErrorContainer;
+        m3.m3primaryFixed = c.m3primaryFixed;
+        m3.m3primaryFixedDim = c.m3primaryFixedDim;
+        m3.m3onPrimaryFixed = c.m3onPrimaryFixed;
+        m3.m3onPrimaryFixedVariant = c.m3onPrimaryFixedVariant;
+        m3.m3secondaryFixed = c.m3secondaryFixed;
+        m3.m3secondaryFixedDim = c.m3secondaryFixedDim;
+        m3.m3onSecondaryFixed = c.m3onSecondaryFixed;
+        m3.m3onSecondaryFixedVariant = c.m3onSecondaryFixedVariant;
+        m3.m3tertiaryFixed = c.m3tertiaryFixed;
+        m3.m3tertiaryFixedDim = c.m3tertiaryFixedDim;
+        m3.m3onTertiaryFixed = c.m3onTertiaryFixed;
+        m3.m3onTertiaryFixedVariant = c.m3onTertiaryFixedVariant;
+        m3.m3success = c.m3success;
+        m3.m3onSuccess = c.m3onSuccess;
+        m3.m3successContainer = c.m3successContainer;
+        m3.m3onSuccessContainer = c.m3onSuccessContainer;
     }
 }
 
