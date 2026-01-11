@@ -134,18 +134,13 @@ Item {
              : p.toLocaleString(Qt.locale(), 'f', 6)
     }
 
-    StyledRectangularShadow { target: card; visible: !Appearance.inirEverywhere && !Appearance.auroraEverywhere }
-
     Rectangle {
         id: card
         anchors.centerIn: parent
         width: parent.width
         implicitHeight: col.implicitHeight + 20
         radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
-        color: Appearance.inirEverywhere ? Appearance.inir.colLayer1
-             : Appearance.auroraEverywhere ? "transparent" : Appearance.colors.colLayer1
-        border.width: Appearance.inirEverywhere ? 1 : (Appearance.auroraEverywhere ? 0 : 1)
-        border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : Appearance.colors.colLayer0Border
+        color: "transparent"
 
         ColumnLayout {
             id: col

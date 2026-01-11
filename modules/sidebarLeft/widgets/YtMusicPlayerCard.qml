@@ -24,8 +24,14 @@ Item {
 
     readonly property bool hasTrack: YtMusic.currentVideoId !== ""
     readonly property bool isPlaying: YtMusic.isPlaying
-    
-    property list<real> visualizerPoints: []
+
+    // Cava visualizer - using shared CavaProcess component
+    CavaProcess {
+        id: cavaProcess
+        active: root.visible && root.isPlaying && GlobalStates.sidebarLeftOpen && Appearance.effectsEnabled
+    }
+
+    property list<real> visualizerPoints: cavaProcess.points
 
     // Adaptive colors from thumbnail
     ColorQuantizer {
@@ -42,33 +48,19 @@ Item {
     property QtObject blendedColors: AdaptedMaterialScheme { color: root.artColor }
 
     // Style tokens
-    readonly property color colText: Appearance.inirEverywhere ? Appearance.inir.colText 
+    readonly property color colText: Appearance.inirEverywhere ? Appearance.inir.colText
         : (blendedColors?.colOnLayer0 ?? Appearance.colors.colOnLayer0)
-    readonly property color colTextSecondary: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary 
+    readonly property color colTextSecondary: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary
         : (blendedColors?.colSubtext ?? Appearance.colors.colSubtext)
-    readonly property color colPrimary: Appearance.inirEverywhere ? Appearance.inir.colPrimary 
+    readonly property color colPrimary: Appearance.inirEverywhere ? Appearance.inir.colPrimary
         : (blendedColors?.colPrimary ?? Appearance.colors.colPrimary)
-    readonly property color colBg: Appearance.inirEverywhere ? Appearance.inir.colLayer1 
+    readonly property color colBg: Appearance.inirEverywhere ? Appearance.inir.colLayer1
         : Appearance.auroraEverywhere ? ColorUtils.transparentize(blendedColors?.colLayer0 ?? Appearance.colors.colLayer0, 0.7)
         : (blendedColors?.colLayer0 ?? Appearance.colors.colLayer0)
-    readonly property color colLayer2: Appearance.inirEverywhere ? Appearance.inir.colLayer2 
+    readonly property color colLayer2: Appearance.inirEverywhere ? Appearance.inir.colLayer2
         : (blendedColors?.colLayer1 ?? Appearance.colors.colLayer1)
     readonly property real radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
     readonly property real radiusSmall: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
-
-    // Cava visualizer - optimized with conditional running
-    Process {
-        id: cavaProc
-        running: root.visible && root.isPlaying && GlobalStates.sidebarLeftOpen && Appearance.effectsEnabled
-        onRunningChanged: { if (!running) root.visualizerPoints = [] }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
-        stdout: SplitParser {
-            onRead: data => {
-                if (!root.isPlaying) return // Skip processing if not playing
-                root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p))
-            }
-        }
-    }
 
     StyledRectangularShadow { target: card; visible: !Appearance.inirEverywhere && !Appearance.auroraEverywhere }
 
@@ -80,7 +72,7 @@ Item {
         radius: root.radius
         color: root.colBg
         border.width: Appearance.inirEverywhere ? 1 : 0
-        border.color: Appearance.inir.colBorder
+        border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : "transparent"
         clip: true
 
         layer.enabled: true

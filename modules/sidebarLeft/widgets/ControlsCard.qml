@@ -87,17 +87,13 @@ Item {
         implicitWidth: 40
         implicitHeight: 40
         buttonRadius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.full
-        colBackground: Appearance.inirEverywhere 
-            ? "transparent" 
-            : (active ? Appearance.colors.colPrimaryContainer : "transparent")
-        colBackgroundHover: Appearance.inirEverywhere 
-            ? Appearance.inir.colLayer1Hover 
-            : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface
-            : (active ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colLayer1Hover)
-        colRipple: Appearance.inirEverywhere 
-            ? Appearance.inir.colLayer1Active 
+        colBackground: "transparent"
+        colBackgroundHover: Appearance.inirEverywhere ? Appearance.inir.colLayer1Hover
+            : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceHover
+            : Appearance.colors.colLayer1Hover
+        colRipple: Appearance.inirEverywhere ? Appearance.inir.colLayer1Active
             : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceActive
-            : (active ? Appearance.colors.colPrimaryContainerActive : Appearance.colors.colLayer1Active)
+            : Appearance.colors.colLayer1Active
 
         Behavior on colBackground {
             enabled: Appearance.animationsEnabled
@@ -110,9 +106,13 @@ Item {
                 text: btnIcon
                 iconSize: 22
                 fill: active ? 1 : 0
-                color: Appearance.inirEverywhere 
-                    ? (active ? Appearance.inir.colPrimary : Appearance.inir.colText) 
-                    : (active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer0)
+                color: active
+                    ? (Appearance.inirEverywhere ? Appearance.inir.colPrimary
+                        : Appearance.auroraEverywhere ? Appearance.m3colors.m3primary
+                        : Appearance.colors.colPrimary)
+                    : (Appearance.inirEverywhere ? Appearance.inir.colText
+                        : Appearance.auroraEverywhere ? Appearance.m3colors.m3onSurface
+                        : Appearance.colors.colOnLayer0)
                 Behavior on fill { enabled: Appearance.animationsEnabled; NumberAnimation { duration: Appearance.animation.elementMoveFast.duration } }
                 Behavior on color { enabled: Appearance.animationsEnabled; animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
             }

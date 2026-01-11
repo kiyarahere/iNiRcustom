@@ -981,27 +981,32 @@ Item {
     component AccountView: ColumnLayout {
         spacing: 12
 
+        // Connection status card
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 90
+            Layout.preferredHeight: YtMusic.googleChecking ? 110 : 90
             radius: root.radiusNormal
-            color: YtMusic.googleConnected ? root.colPrimary : root.colLayer2
+            color: YtMusic.googleConnected ? root.colPrimary
+                 : YtMusic.googleChecking ? ColorUtils.transparentize(root.colPrimary, 0.9)
+                 : root.colLayer2
             border.width: YtMusic.googleConnected ? 0 : root.borderWidth
-            border.color: root.colBorder
+            border.color: YtMusic.googleChecking ? root.colPrimary : root.colBorder
+
+            Behavior on Layout.preferredHeight { NumberAnimation { duration: 150 } }
 
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 16
                 spacing: 16
-                
+
                 Rectangle {
                     Layout.preferredWidth: 56
                     Layout.preferredHeight: 56
                     radius: 28
-                    color: YtMusic.googleConnected 
-                        ? ColorUtils.transparentize(Appearance.colors.colOnPrimary, 0.85) 
+                    color: YtMusic.googleConnected
+                        ? ColorUtils.transparentize(Appearance.colors.colOnPrimary, 0.85)
                         : ColorUtils.transparentize(root.colTextSecondary, 0.9)
-                    
+
                     Image {
                         anchors.fill: parent
                         anchors.margins: 2
@@ -1009,35 +1014,101 @@ Item {
                         visible: YtMusic.googleConnected && YtMusic.userAvatar !== ""
                         fillMode: Image.PreserveAspectCrop
                         layer.enabled: true
-                        layer.effect: GE.OpacityMask { 
-                            maskSource: Rectangle { width: 52; height: 52; radius: 26 } 
+                        layer.effect: GE.OpacityMask {
+                            maskSource: Rectangle { width: 52; height: 52; radius: 26 }
                         }
                     }
-                    
-                    MaterialSymbol { 
+
+                    MaterialSymbol {
                         anchors.centerIn: parent
-                        visible: !YtMusic.googleConnected || YtMusic.userAvatar === ""
+                        visible: !YtMusic.googleConnected && !YtMusic.googleChecking || (YtMusic.googleConnected && YtMusic.userAvatar === "")
                         text: YtMusic.googleConnected ? "account_circle" : "person_off"
                         iconSize: 28
-                        color: YtMusic.googleConnected ? Appearance.colors.colOnPrimary : root.colTextSecondary 
+                        color: YtMusic.googleConnected ? Appearance.colors.colOnPrimary : root.colTextSecondary
+                    }
+
+                    // Loading spinner during check
+                    BusyIndicator {
+                        anchors.centerIn: parent
+                        visible: YtMusic.googleChecking
+                        running: visible
+                        implicitWidth: 32
+                        implicitHeight: 32
                     }
                 }
-                
-                ColumnLayout { 
+
+                ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
-                    StyledText { 
-                        text: YtMusic.googleConnected ? (YtMusic.userName || Translation.tr("User")) : Translation.tr("Not Connected")
+                    StyledText {
+                        text: YtMusic.googleChecking ? Translation.tr("Connecting...")
+                            : YtMusic.googleConnected ? (YtMusic.userName || Translation.tr("Connected"))
+                            : Translation.tr("Not Connected")
                         font.pixelSize: Appearance.font.pixelSize.large
                         font.weight: Font.Bold
-                        color: YtMusic.googleConnected ? Appearance.colors.colOnPrimary : root.colText 
+                        color: YtMusic.googleConnected ? Appearance.colors.colOnPrimary : root.colText
                     }
-                    StyledText { 
-                        text: YtMusic.googleConnected ? Translation.tr("Library Synced") : Translation.tr("Sign in to sync")
+                    StyledText {
+                        text: YtMusic.googleChecking ? Translation.tr("Checking browser cookies...")
+                            : YtMusic.googleConnected ? Translation.tr("Library Synced")
+                            : Translation.tr("Sign in to sync your library")
                         font.pixelSize: Appearance.font.pixelSize.small
-                        color: YtMusic.googleConnected 
-                            ? ColorUtils.transparentize(Appearance.colors.colOnPrimary, 0.3) 
-                            : root.colTextSecondary 
+                        color: YtMusic.googleConnected
+                            ? ColorUtils.transparentize(Appearance.colors.colOnPrimary, 0.3)
+                            : root.colTextSecondary
+                    }
+                    // Show which browser is being tried
+                    StyledText {
+                        visible: YtMusic.googleChecking && YtMusic.googleBrowser
+                        text: Translation.tr("Trying %1...").arg(YtMusic.getBrowserDisplayName(YtMusic.googleBrowser))
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: root.colPrimary
+                    }
+                }
+            }
+        }
+
+        // Error message
+        Rectangle {
+            Layout.fillWidth: true
+            visible: YtMusic.googleError !== "" && !YtMusic.googleChecking
+            implicitHeight: errorCol.implicitHeight + 16
+            radius: root.radiusSmall
+            color: ColorUtils.transparentize(Appearance.colors.colError, 0.9)
+            border.width: 1
+            border.color: ColorUtils.transparentize(Appearance.colors.colError, 0.7)
+
+            ColumnLayout {
+                id: errorCol
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    MaterialSymbol { text: "error"; iconSize: 18; color: Appearance.colors.colError }
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: YtMusic.googleError
+                        color: Appearance.colors.colOnErrorContainer
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                RippleButton {
+                    Layout.alignment: Qt.AlignRight
+                    implicitWidth: 100
+                    implicitHeight: 28
+                    buttonRadius: 14
+                    colBackground: Appearance.colors.colError
+                    onClicked: YtMusic.openYtMusicInBrowser()
+                    contentItem: RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        MaterialSymbol { text: "open_in_new"; iconSize: 14; color: Appearance.colors.colOnError }
+                        StyledText { text: Translation.tr("Sign In"); color: Appearance.colors.colOnError; font.pixelSize: Appearance.font.pixelSize.smaller }
                     }
                 }
             }
@@ -1047,22 +1118,37 @@ Item {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             spacing: 10
-            
+
             RippleButton {
-                visible: !YtMusic.googleConnected
-                implicitWidth: 140
-                implicitHeight: 36
-                buttonRadius: 18
+                visible: !YtMusic.googleConnected && !YtMusic.googleChecking
+                implicitWidth: 160
+                implicitHeight: 40
+                buttonRadius: 20
                 colBackground: root.colPrimary
                 onClicked: YtMusic.quickConnect()
-                contentItem: RowLayout { 
+                contentItem: RowLayout {
                     anchors.centerIn: parent
                     spacing: 8
-                    MaterialSymbol { text: "bolt"; iconSize: 18; color: Appearance.colors.colOnPrimary }
-                    StyledText { text: Translation.tr("Quick Connect"); color: Appearance.colors.colOnPrimary; font.weight: Font.Medium } 
+                    MaterialSymbol { text: "bolt"; iconSize: 20; color: Appearance.colors.colOnPrimary }
+                    StyledText { text: Translation.tr("Quick Connect"); color: Appearance.colors.colOnPrimary; font.weight: Font.Medium }
                 }
             }
-            
+
+            // Cancel button during checking
+            RippleButton {
+                visible: YtMusic.googleChecking
+                implicitWidth: 100
+                implicitHeight: 36
+                buttonRadius: 18
+                colBackground: root.colLayer2
+                onClicked: { YtMusic.googleChecking = false; YtMusic.googleError = "" }
+                contentItem: StyledText {
+                    anchors.centerIn: parent
+                    text: Translation.tr("Cancel")
+                    color: root.colText
+                }
+            }
+
             RippleButton {
                 visible: YtMusic.googleConnected
                 implicitWidth: 120
@@ -1071,10 +1157,10 @@ Item {
                 colBackground: ColorUtils.transparentize(root.colText, 0.9)
                 colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colError, 0.8)
                 onClicked: YtMusic.disconnectGoogle()
-                contentItem: RowLayout { 
+                contentItem: RowLayout {
                     anchors.centerIn: parent
                     spacing: 8
-                    MaterialSymbol { 
+                    MaterialSymbol {
                         text: "logout"
                         iconSize: 18
                         color: parent.parent.buttonHovered ? Appearance.colors.colError : root.colText 

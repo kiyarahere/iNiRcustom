@@ -19,15 +19,23 @@ Item {
     visible: hasPlayer
 
     property MprisPlayer player: MprisController.activePlayer
-    readonly property bool hasPlayer: player && player.trackTitle
+    // Hide when YtMusic is active to avoid duplicate widgets (YtMusicPlayerCard handles that)
+    readonly property bool hasPlayer: player && player.trackTitle && !MprisController.isYtMusicActive
     property string artDownloadLocation: Directories.coverArt
     property string artFileName: player?.trackArtUrl ? Qt.md5(player.trackArtUrl) : ""
     property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
     property bool downloaded: false
     property string displayedArtFilePath: downloaded ? Qt.resolvedUrl(artFilePath) : ""
-    property list<real> visualizerPoints: []
     property int _downloadRetryCount: 0
     readonly property int _maxRetries: 3
+
+    // Cava visualizer - using shared CavaProcess component
+    CavaProcess {
+        id: cavaProcess
+        active: root.visible && root.hasPlayer && GlobalStates.sidebarLeftOpen && Appearance.effectsEnabled
+    }
+
+    property list<real> visualizerPoints: cavaProcess.points
 
     function checkAndDownloadArt() {
         if (!player?.trackArtUrl) {
@@ -117,18 +125,6 @@ Item {
         }
     }
 
-    Process {
-        id: cavaProc
-        running: root.visible && root.hasPlayer && GlobalStates.sidebarLeftOpen
-        onRunningChanged: { if (!running) root.visualizerPoints = [] }
-        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
-        stdout: SplitParser {
-            onRead: data => {
-                root.visualizerPoints = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p))
-            }
-        }
-    }
-
     ColorQuantizer {
         id: colorQuantizer
         source: root.displayedArtFilePath
@@ -162,7 +158,7 @@ Item {
              : Appearance.auroraEverywhere ? ColorUtils.transparentize(blendedColors?.colLayer0 ?? Appearance.colors.colLayer0, 0.7)
              : (blendedColors?.colLayer0 ?? Appearance.colors.colLayer0)
         border.width: Appearance.inirEverywhere ? 1 : 0
-        border.color: Appearance.inir.colBorder
+        border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : "transparent"
         clip: true
 
         layer.enabled: true

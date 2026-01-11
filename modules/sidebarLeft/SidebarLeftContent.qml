@@ -44,7 +44,7 @@ Item {
     property bool animeCloset: (Config.options?.policies?.weeb ?? 0) === 2
     property bool animeScheduleEnabled: Config.options?.sidebar?.animeSchedule?.enable ?? false
     property bool redditEnabled: Config.options?.sidebar?.reddit?.enable ?? false
-    property bool wallhavenEnabled: Config.options.sidebar?.wallhaven?.enable !== false
+    property bool wallhavenEnabled: Config.options?.sidebar?.wallhaven?.enable !== false
     property bool widgetsEnabled: Config.options?.sidebar?.widgets?.enable ?? true
     property bool toolsEnabled: Config.options?.sidebar?.tools?.enable ?? false
     property bool ytMusicEnabled: Config.options?.sidebar?.ytmusic?.enable ?? false
@@ -78,7 +78,7 @@ Item {
         anchors.fill: parent
         implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
-        property bool cardStyle: Config.options.sidebar?.cardStyle ?? false
+        property bool cardStyle: Config.options?.sidebar?.cardStyle ?? false
         readonly property bool auroraEverywhere: Appearance.auroraEverywhere
         readonly property bool gameModeMinimal: Appearance.gameModeMinimal
         readonly property string wallpaperUrl: Wallpapers.effectiveWallpaperUrl
@@ -145,7 +145,7 @@ Item {
             Toolbar {
                 Layout.alignment: Qt.AlignHCenter
                 enableShadow: false
-                transparent: Appearance.auroraEverywhere
+                transparent: Appearance.auroraEverywhere || Appearance.inirEverywhere
                 ToolbarTabBar {
                     id: tabBar
                     Layout.alignment: Qt.AlignHCenter
