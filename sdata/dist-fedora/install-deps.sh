@@ -111,6 +111,7 @@ FEDORA_CORE_PKGS=(
   libnotify
   wlsunset
   dunst
+  cliphist
   
   # XDG Portals
   xdg-desktop-portal
@@ -126,12 +127,23 @@ FEDORA_CORE_PKGS=(
   
   # File manager
   dolphin
+  kio-extras
   
   # Terminal
   foot
   
   # Shell (required for scripts)
   fish
+  
+  # System monitor
+  mission-center
+  
+  # Thumbnails
+  ffmpegthumbnailer
+  tumbler
+  
+  # Translation
+  translate-shell
 )
 
 # Qt6 packages
@@ -402,28 +414,33 @@ echo -e "${STY_CYAN}[$0]: Installing critical fonts...${STY_RST}"
 FONT_DIR="$HOME/.local/share/fonts"
 mkdir -p "$FONT_DIR"
 
-# Material Symbols (icons) - download from Google Fonts GitHub
-if ! fc-list | grep -qi "Material Symbols"; then
-  echo -e "${STY_BLUE}[$0]: Downloading Material Symbols font...${STY_RST}"
+# Material Symbols Rounded (icons) - this is the font iNiR actually uses
+if ! fc-list | grep -qi "Material Symbols Rounded"; then
+  echo -e "${STY_BLUE}[$0]: Downloading Material Symbols Rounded font...${STY_RST}"
   
-  # Direct download from raw.githubusercontent (avoids redirect issues)
+  # Direct download from raw.githubusercontent
+  MATERIAL_URL="https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsRounded%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
+  
+  if curl -fsSL -o "$FONT_DIR/MaterialSymbolsRounded.ttf" "$MATERIAL_URL"; then
+    fc-cache -fv "$FONT_DIR" 2>/dev/null
+    echo -e "${STY_GREEN}[$0]: Material Symbols Rounded font installed.${STY_RST}"
+  else
+    echo -e "${STY_YELLOW}[$0]: Could not download Material Symbols Rounded.${STY_RST}"
+    echo -e "${STY_YELLOW}Please download from: https://fonts.google.com/icons${STY_RST}"
+  fi
+fi
+
+# Also install Outlined variant (used by nts)
+if ! fc-list | grep -qi "Material Symbols Outlined"; then
+  echo -e "${STY_BLUE}[$0]: Downloading Material Symbols Outlined font...${STY_RST}"
+  
   MATERIAL_URL="https://raw.githubusercontent.com/google/material-design-icons/master/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
   
-  # Use simple filename to avoid shell escaping issues
   if curl -fsSL -o "$FONT_DIR/MaterialSymbolsOutlined.ttf" "$MATERIAL_URL"; then
     fc-cache -fv "$FONT_DIR" 2>/dev/null
-    echo -e "${STY_GREEN}[$0]: Material Symbols font installed.${STY_RST}"
-    
-    # Verify installation
-    if fc-list | grep -qi "Material Symbols"; then
-      echo -e "${STY_GREEN}[$0]: Material Symbols verified in font cache.${STY_RST}"
-    else
-      echo -e "${STY_YELLOW}[$0]: Font installed but not detected. Try logging out and back in.${STY_RST}"
-    fi
+    echo -e "${STY_GREEN}[$0]: Material Symbols Outlined font installed.${STY_RST}"
   else
-    echo -e "${STY_YELLOW}[$0]: Could not download Material Symbols automatically.${STY_RST}"
-    echo -e "${STY_YELLOW}Please download from: https://fonts.google.com/icons${STY_RST}"
-    echo -e "${STY_YELLOW}Or on Arch: yay -S ttf-material-symbols-variable-git${STY_RST}"
+    echo -e "${STYLLOW}[$0]: Could not download Material Symbols Outlined.${STY_RST}"
   fi
 fi
 
@@ -486,9 +503,11 @@ if [[ ! -d "$ICON_DIR/MacTahoe" ]]; then
   mkdir -p "$TEMP_DIR"
   
   if curl -fsSL -o "$TEMP_DIR/mactahoe.tar.gz" \
-    "https://github.com/nicholasballin/MacTahoe/archive/refs/heads/main.tar.gz"; then
+    "https://github.com/vinceliuice/MacTahoe-icon-theme/archive/refs/heads/master.tar.gz"; then
     tar -xzf "$TEMP_DIR/mactahoe.tar.gz" -C "$TEMP_DIR"
-    cp -r "$TEMP_DIR/MacTahoe-main" "$ICON_DIR/MacTahoe"
+    cd "$TEMP_DIR/MacTahoe-icon-theme-master" 2>/dev/null || cd "$TEMP_DIR/MacTahoe-icon-theme-main"
+    ./install.sh -d "$ICON_DIR" >/dev/null 2>&1
+    cd - >/dev/null
     echo -e "${STY_GREEN}[$0]: MacTahoe icon theme installed.${STY_RST}"
   else
     echo -e "${STY_YELLOW}[$0]: Could not download MacTahoe icon theme.${STY_RST}"
@@ -497,9 +516,72 @@ if [[ ! -d "$ICON_DIR/MacTahoe" ]]; then
   rm -rf "$TEMP_DIR"
 fi
 
-# Update icon cache
-gtk-update-icon-cache "$ICON_DIR/WhiteSur-dark" 2>/dev/null || true
-gtk-update-icon-cache "$ICON_DIR/MacTahoe" 2>/dev/null || true
+#####################################################################################
+# Cursor themes
+#####################################################################################
+echo -e "${STY_CYAN}[$0]: Installing cursor themes...${STY_RST}"
+
+# Bibata Modern cursors (popular, well-maintained)
+if [[ ! -d "$ICON_DIR/Bibata-Modern-Classic" ]]; then
+  echo -e "${STY_BLUE}[$0]: Installing Bibata cursor theme...${STY_RST}"
+  
+  TEMP_DIR="/tmp/bibata-cursors-$$"
+  mkdir -p "$TEMP_DIR"
+  
+  # Download Bibata Modern Classic (dark)
+  if curl -fsSL -o "$TEMP_DIR/bibata-classic.tar.xz" \
+    "https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Classic.tar.xz"; then
+    tar -xf "$TEMP_DIR/bibata-classic.tar.xz" -C "$ICON_DIR"
+    echo -e "${STY_GREEN}[$0]: Bibata Modern Classic cursor installed.${STY_RST}"
+  fi
+  
+  # Download Bibata Modern Ice (light)
+  if curl -fsSL -o "$TEMP_DIR/bibata-ice.tar.xz" \
+    "https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Ice.tar.xz"; then
+    tar -xf "$TEMP_DIR/bibata-ice.tar.xz" -C "$ICON_DIR"
+    echo -e "${STY_GREEN}[$0]: Bibata Modern Ice cursor installed.${STY_RST}"
+  fi
+  
+  rm -rf "$TEMP_DIR"
+fi
+
+#####################################################################################
+# Optional fonts (nice to have)
+#####################################################################################
+echo -e "${STY_CYAN}[$0]: Installing optional fonts...${STY_RST}"
+
+# Space Grotesk
+if ! fc-list | grep -qi "Space Grotesk"; then
+  echo -e "${STY_BLUE}[$0]: Downloading Space Grotesk font...${STY_RST}"
+  curl -fsSL -o "$FONT_DIR/SpaceGrotesk.ttf" \
+    "https://github.com/floriankarsten/space-grotesk/raw/master/fonts/ttf/SpaceGrotesk%5Bwght%5D.ttf" 2>/dev/null && \
+    echo -e "${STY_GREEN}[$0]: Space Grotesk installed.${STY_RST}"
+fi
+
+# Rubik
+if ! fc-list | grep -qi "Rubik"; then
+  echo -e "${STY_BLUE}[$0]: Downloading Rubik font...${STY_RST}"
+  curl -fsSL -o "$FONT_DIR/Rubik.ttf" \
+    "https://github.com/googlefonts/rubik/raw/main/fonts/variable/Rubik%5Bwght%5D.ttf" 2>/dev/null && \
+    echo -e "${STY_GREEN}[$0]: Rubik installed.${STY_RST}"
+fi
+
+# Geist (used by default in iNiR)
+if ! fc-list | grep -qi "Geist"; then
+  echo -e "${STY_BLUE}[$0]: Downloading Geist font...${STY_RST}"
+  TEMP_DIR="/tmp/geist-font-$$"
+  mkdir -p "$TEMP_DIR"
+  if curl -fsSL -o "$TEMP_DIR/geist.zip" \
+    "https://github.com/vercel/geist-font/releases/latest/download/Geist.zip"; then
+    unzip -o "$TEMP_DIR/geist.zip" -d "$TEMP_DIR" >/dev/null 2>&1
+    find "$TEMP_DIR" -name "*.ttf" -exec cp {} "$FONT_DIR/" \;
+    echo -e "${STY_GREEN}[$0]: Geist font installed.${STY_RST}"
+  fi
+  rm -rf "$TEMP_DIR"
+fi
+
+# Refresh font cache
+fc-cache -f "$FONT_DIR" 2>/dev/null
 
 #####################################################################################
 # Python environment setup
