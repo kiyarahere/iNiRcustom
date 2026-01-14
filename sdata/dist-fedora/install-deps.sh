@@ -135,8 +135,8 @@ FEDORA_CORE_PKGS=(
   # Shell (required for scripts)
   fish
   
-  # System monitor
-  mission-center
+  # System monitor (not available in all Fedora versions)
+  # mission-center
   
   # Thumbnails
   ffmpegthumbnailer
