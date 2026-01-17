@@ -499,6 +499,7 @@ if ! command -v niri &>/dev/null; then
       libdbus-1-dev \
       libsystemd-dev \
       libpipewire-0.3-dev \
+      libdisplay-info-dev \
       clang 2>/dev/null || true
     
     NIRI_BUILD_DIR="/tmp/niri-build-$$"
@@ -531,7 +532,19 @@ fi
 #####################################################################################
 if ! command -v xwayland-satellite &>/dev/null; then
   echo -e "${STY_BLUE}[$0]: Installing xwayland-satellite...${STY_RST}"
-  cargo install xwayland-satellite
+  # xwayland-satellite is not on crates.io, must compile from source
+  XWSAT_BUILD_DIR="/tmp/xwayland-satellite-build-$$"
+  if git clone https://github.com/Supreeeme/xwayland-satellite.git "$XWSAT_BUILD_DIR"; then
+    cd "$XWSAT_BUILD_DIR"
+    if cargo build --release; then
+      sudo cp target/release/xwayland-satellite /usr/local/bin/
+      echo -e "${STY_GREEN}[$0]: xwayland-satellite installed${STY_RST}"
+    else
+      echo -e "${STY_YELLOW}[$0]: xwayland-satellite build failed${STY_RST}"
+    fi
+    cd "${REPO_ROOT}"
+    rm -rf "$XWSAT_BUILD_DIR"
+  fi
 fi
 
 #####################################################################################
@@ -548,8 +561,11 @@ if ! command -v qs &>/dev/null; then
     libpam0g-dev \
     qt6-base-private-dev \
     qt6-declarative-private-dev \
-    libqt6shadertools6-dev \
+    qt6-shader-baker \
     qt6-wayland-dev 2>/dev/null || true
+  # Try alternative package names for Qt6 ShaderTools
+  sudo apt install $installflags qt6-shadertools-dev 2>/dev/null || \
+    sudo apt install $installflags libqt6shadertools6-dev 2>/dev/null || true
   
   QUICKSHELL_BUILD_DIR="/tmp/quickshell-build-$$"
   
