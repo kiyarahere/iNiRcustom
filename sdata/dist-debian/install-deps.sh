@@ -17,14 +17,22 @@ IS_DEBIAN=false
 UBUNTU_VERSION=""
 DEBIAN_VERSION=""
 
-if grep -qi "ubuntu" /etc/os-release 2>/dev/null; then
+# Also detect Ubuntu derivatives (PikaOS, Pop!_OS, Linux Mint, etc.)
+DISTRO_ID=$(grep "^ID=" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+DISTRO_ID_LIKE=$(grep "^ID_LIKE=" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+DISTRO_NAME=$(grep "^PRETTY_NAME=" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+
+if grep -qi "ubuntu" /etc/os-release 2>/dev/null || [[ "$DISTRO_ID_LIKE" == *"ubuntu"* ]]; then
   IS_UBUNTU=true
+  # Try to get Ubuntu base version from derivative or actual Ubuntu
   UBUNTU_VERSION=$(grep "^VERSION_ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
-  echo -e "${STY_CYAN}[$0]: Detected Ubuntu ${UBUNTU_VERSION}${STY_RST}"
-elif [[ -f /etc/debian_version ]]; then
+  # Some derivatives use UBUNTU_CODENAME
+  UBUNTU_CODENAME=$(grep "^UBUNTU_CODENAME=" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+  echo -e "${STY_CYAN}[$0]: Detected ${DISTRO_NAME:-Ubuntu} (Ubuntu-based)${STY_RST}"
+elif [[ -f /etc/debian_version ]] || [[ "$DISTRO_ID_LIKE" == *"debian"* ]]; then
   IS_DEBIAN=true
-  DEBIAN_VERSION=$(cat /etc/debian_version)
-  echo -e "${STY_CYAN}[$0]: Detected Debian ${DEBIAN_VERSION}${STY_RST}"
+  DEBIAN_VERSION=$(cat /etc/debian_version 2>/dev/null || echo "unknown")
+  echo -e "${STY_CYAN}[$0]: Detected ${DISTRO_NAME:-Debian} (Debian-based)${STY_RST}"
 fi
 
 # Detect architecture
@@ -127,9 +135,10 @@ DEBIAN_CORE_PKGS=(
   pkg-config
 )
 
-# Qt6 packages
+# Qt6 packages - ONLY dev packages, runtime libs are auto-installed as dependencies
+# This avoids conflicts with t64 transition packages (libqt6core6t64 vs libqt6core6)
 DEBIAN_QT6_PKGS=(
-  # Core Qt6
+  # Core Qt6 development (runtime libs installed as deps)
   qt6-base-dev
   qt6-declarative-dev
   libqt6svg6-dev
@@ -137,15 +146,6 @@ DEBIAN_QT6_PKGS=(
   qt6-5compat-dev
   qt6-multimedia-dev
   qt6-image-formats-plugins
-  libqt6positioning6
-  libqt6sensors6
-  
-  # Runtime libraries
-  libqt6core6
-  libqt6gui6
-  libqt6qml6
-  libqt6quick6
-  libqt6waylandclient6
   
   # System libs
   libjemalloc-dev
@@ -223,17 +223,15 @@ DEBIAN_FONT_PKGS=(
   
   # Launcher
   fuzzel
-  libglib2.0-0
   
   # Qt theming
   kvantum
 )
 
-# Wayland packages
+# Wayland packages - only dev packages, runtime libs installed as deps
 DEBIAN_WAYLAND_PKGS=(
   wayland-protocols
-  libwayland-client0
-  libwayland-server0
+  libwayland-dev
   libxkbcommon-dev
 )
 
@@ -255,37 +253,61 @@ fi
 installflags=""
 $ask || installflags="-y"
 
+# Fix any broken packages first
+echo -e "${STY_BLUE}[$0]: Fixing any broken packages...${STY_RST}"
+sudo apt --fix-broken install -y 2>/dev/null || true
+
+# Helper function to install packages with fallback
+install_packages() {
+  local pkg_array_name="$1"
+  local description="$2"
+  local -n pkgs="$pkg_array_name"
+  
+  echo -e "${STY_BLUE}[$0]: Installing ${description}...${STY_RST}"
+  
+  # Try to install all at once first
+  if sudo apt install $installflags "${pkgs[@]}" 2>/dev/null; then
+    return 0
+  fi
+  
+  # If that fails, try one by one (skip unavailable)
+  echo -e "${STY_YELLOW}[$0]: Batch install failed, trying packages individually...${STY_RST}"
+  local failed_pkgs=()
+  for pkg in "${pkgs[@]}"; do
+    if ! sudo apt install $installflags "$pkg" 2>/dev/null; then
+      failed_pkgs+=("$pkg")
+    fi
+  done
+  
+  if [[ ${#failed_pkgs[@]} -gt 0 ]]; then
+    echo -e "${STY_YELLOW}[$0]: Could not install: ${failed_pkgs[*]}${STY_RST}"
+  fi
+}
+
 # Install core packages
-echo -e "${STY_BLUE}[$0]: Installing core packages...${STY_RST}"
-v sudo apt install $installflags "${DEBIAN_CORE_PKGS[@]}"
+install_packages DEBIAN_CORE_PKGS "core packages"
 
 # Install Qt6 packages
-echo -e "${STY_BLUE}[$0]: Installing Qt6 packages...${STY_RST}"
-v sudo apt install $installflags "${DEBIAN_QT6_PKGS[@]}"
+install_packages DEBIAN_QT6_PKGS "Qt6 packages"
 
 # Install Wayland packages
-echo -e "${STY_BLUE}[$0]: Installing Wayland packages...${STY_RST}"
-v sudo apt install $installflags "${DEBIAN_WAYLAND_PKGS[@]}"
+install_packages DEBIAN_WAYLAND_PKGS "Wayland packages"
 
 # Install based on flags
 if ${INSTALL_AUDIO:-true}; then
-  echo -e "${STY_BLUE}[$0]: Installing audio packages...${STY_RST}"
-  v sudo apt install $installflags "${DEBIAN_AUDIO_PKGS[@]}"
+  install_packages DEBIAN_AUDIO_PKGS "audio packages"
 fi
 
 if ${INSTALL_TOOLKIT:-true}; then
-  echo -e "${STY_BLUE}[$0]: Installing toolkit packages...${STY_RST}"
-  v sudo apt install $installflags "${DEBIAN_TOOLKIT_PKGS[@]}"
+  install_packages DEBIAN_TOOLKIT_PKGS "toolkit packages"
 fi
 
 if ${INSTALL_SCREENCAPTURE:-true}; then
-  echo -e "${STY_BLUE}[$0]: Installing screen capture packages...${STY_RST}"
-  v sudo apt install $installflags "${DEBIAN_SCREENCAPTURE_PKGS[@]}"
+  install_packages DEBIAN_SCREENCAPTURE_PKGS "screen capture packages"
 fi
 
 if ${INSTALL_FONTS:-true}; then
-  echo -e "${STY_BLUE}[$0]: Installing font packages...${STY_RST}"
-  v sudo apt install $installflags "${DEBIAN_FONT_PKGS[@]}"
+  install_packages DEBIAN_FONT_PKGS "font packages"
 fi
 
 #####################################################################################
@@ -401,17 +423,20 @@ fi
 if ${INSTALL_SCREENCAPTURE:-true}; then
   if ! command -v swappy &>/dev/null; then
     echo -e "${STY_BLUE}[$0]: Installing swappy from source...${STY_RST}"
-    v sudo apt install $installflags libgtk-3-dev libcairo2-dev libpango1.0-dev
+    sudo apt install $installflags libgtk-3-dev libcairo2-dev libpango1.0-dev scdoc 2>/dev/null || true
     
     SWAPPY_BUILD_DIR="/tmp/swappy-build-$$"
-    git clone https://github.com/jtheoof/swappy.git "$SWAPPY_BUILD_DIR"
-    cd "$SWAPPY_BUILD_DIR"
-    meson setup build
-    ninja -C build
-    sudo ninja -C build install
-    cd "${REPO_ROOT}"
-    rm -rf "$SWAPPY_BUILD_DIR"
-    echo -e "${STY_GREEN}[$0]: swappy installed${STY_RST}"
+    if git clone https://github.com/jtheoof/swappy.git "$SWAPPY_BUILD_DIR" 2>/dev/null; then
+      cd "$SWAPPY_BUILD_DIR"
+      if meson setup build && ninja -C build; then
+        sudo ninja -C build install
+        echo -e "${STY_GREEN}[$0]: swappy installed${STY_RST}"
+      else
+        echo -e "${STY_YELLOW}[$0]: swappy build failed, skipping${STY_RST}"
+      fi
+      cd "${REPO_ROOT}"
+      rm -rf "$SWAPPY_BUILD_DIR"
+    fi
   fi
 fi
 
@@ -464,7 +489,7 @@ if ! command -v niri &>/dev/null; then
   
     # Install Niri build dependencies
     echo -e "${STY_BLUE}[$0]: Installing Niri build dependencies...${STY_RST}"
-    v sudo apt install $installflags \
+    sudo apt install $installflags \
       libgbm-dev \
       libseat-dev \
       libinput-dev \
@@ -474,26 +499,28 @@ if ! command -v niri &>/dev/null; then
       libdbus-1-dev \
       libsystemd-dev \
       libpipewire-0.3-dev \
-      clang
+      clang 2>/dev/null || true
     
     NIRI_BUILD_DIR="/tmp/niri-build-$$"
     
     echo -e "${STY_BLUE}[$0]: Cloning Niri...${STY_RST}"
-    git clone https://github.com/YaLTeR/niri.git "$NIRI_BUILD_DIR"
-    
-    echo -e "${STY_BLUE}[$0]: Building Niri (this may take a while)...${STY_RST}"
-    cd "$NIRI_BUILD_DIR"
-    cargo build --release
-    
-    echo -e "${STY_BLUE}[$0]: Installing Niri...${STY_RST}"
-    sudo cp target/release/niri /usr/local/bin/
-    sudo cp resources/niri.desktop /usr/share/wayland-sessions/ 2>/dev/null || true
-    sudo cp resources/niri-portals.conf /usr/share/xdg-desktop-portal/ 2>/dev/null || true
-    
-    cd "${REPO_ROOT}"
-    rm -rf "$NIRI_BUILD_DIR"
-    
-    echo -e "${STY_GREEN}[$0]: Niri installed successfully!${STY_RST}"
+    if git clone https://github.com/YaLTeR/niri.git "$NIRI_BUILD_DIR"; then
+      echo -e "${STY_BLUE}[$0]: Building Niri (this may take a while)...${STY_RST}"
+      cd "$NIRI_BUILD_DIR"
+      if cargo build --release; then
+        echo -e "${STY_BLUE}[$0]: Installing Niri...${STY_RST}"
+        sudo cp target/release/niri /usr/local/bin/
+        sudo cp resources/niri.desktop /usr/share/wayland-sessions/ 2>/dev/null || true
+        sudo cp resources/niri-portals.conf /usr/share/xdg-desktop-portal/ 2>/dev/null || true
+        echo -e "${STY_GREEN}[$0]: Niri installed successfully!${STY_RST}"
+      else
+        echo -e "${STY_RED}[$0]: Niri build failed!${STY_RST}"
+      fi
+      cd "${REPO_ROOT}"
+      rm -rf "$NIRI_BUILD_DIR"
+    else
+      echo -e "${STY_RED}[$0]: Failed to clone Niri repository${STY_RST}"
+    fi
   fi
 else
   echo -e "${STY_GREEN}[$0]: Niri already installed.${STY_RST}"
@@ -517,34 +544,35 @@ if ! command -v qs &>/dev/null; then
   
   # Install additional build dependencies
   echo -e "${STY_BLUE}[$0]: Installing Quickshell build dependencies...${STY_RST}"
-  v sudo apt install $installflags \
+  sudo apt install $installflags \
     libpam0g-dev \
     qt6-base-private-dev \
     qt6-declarative-private-dev \
     libqt6shadertools6-dev \
-    qt6-wayland-dev
+    qt6-wayland-dev 2>/dev/null || true
   
   QUICKSHELL_BUILD_DIR="/tmp/quickshell-build-$$"
   
   echo -e "${STY_BLUE}[$0]: Cloning Quickshell...${STY_RST}"
-  git clone --recursive https://github.com/quickshell-mirror/quickshell.git "$QUICKSHELL_BUILD_DIR"
-  
-  echo -e "${STY_BLUE}[$0]: Building Quickshell...${STY_RST}"
-  cd "$QUICKSHELL_BUILD_DIR"
-  cmake -B build -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
-    -DSERVICE_PIPEWIRE=ON \
-    -DSERVICE_PAM=ON
-  cmake --build build -j$(nproc)
-  
-  echo -e "${STY_BLUE}[$0]: Installing Quickshell...${STY_RST}"
-  sudo cmake --install build
-  
-  cd "${REPO_ROOT}"
-  rm -rf "$QUICKSHELL_BUILD_DIR"
-  
-  echo -e "${STY_GREEN}[$0]: Quickshell installed successfully!${STY_RST}"
+  if git clone --recursive https://github.com/quickshell-mirror/quickshell.git "$QUICKSHELL_BUILD_DIR"; then
+    echo -e "${STY_BLUE}[$0]: Building Quickshell...${STY_RST}"
+    cd "$QUICKSHELL_BUILD_DIR"
+    if cmake -B build -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DSERVICE_PIPEWIRE=ON \
+      -DSERVICE_PAM=ON && cmake --build build -j$(nproc); then
+      echo -e "${STY_BLUE}[$0]: Installing Quickshell...${STY_RST}"
+      sudo cmake --install build
+      echo -e "${STY_GREEN}[$0]: Quickshell installed successfully!${STY_RST}"
+    else
+      echo -e "${STY_RED}[$0]: Quickshell build failed!${STY_RST}"
+    fi
+    cd "${REPO_ROOT}"
+    rm -rf "$QUICKSHELL_BUILD_DIR"
+  else
+    echo -e "${STY_RED}[$0]: Failed to clone Quickshell repository${STY_RST}"
+  fi
 else
   echo -e "${STY_GREEN}[$0]: Quickshell already installed.${STY_RST}"
 fi
@@ -554,7 +582,7 @@ fi
 #####################################################################################
 if ! command -v cava &>/dev/null; then
   echo -e "${STY_BLUE}[$0]: Installing cava from source...${STY_RST}"
-  v sudo apt install $installflags \
+  sudo apt install $installflags \
     libfftw3-dev \
     libasound2-dev \
     libpulse-dev \
@@ -563,18 +591,20 @@ if ! command -v cava &>/dev/null; then
     libiniparser-dev \
     autoconf \
     automake \
-    libtool
+    libtool 2>/dev/null || true
   
   CAVA_BUILD_DIR="/tmp/cava-build-$$"
-  git clone https://github.com/karlstav/cava.git "$CAVA_BUILD_DIR"
-  cd "$CAVA_BUILD_DIR"
-  ./autogen.sh
-  ./configure
-  make -j$(nproc)
-  sudo make install
-  cd "${REPO_ROOT}"
-  rm -rf "$CAVA_BUILD_DIR"
-  echo -e "${STY_GREEN}[$0]: cava installed${STY_RST}"
+  if git clone https://github.com/karlstav/cava.git "$CAVA_BUILD_DIR"; then
+    cd "$CAVA_BUILD_DIR"
+    if ./autogen.sh && ./configure && make -j$(nproc); then
+      sudo make install
+      echo -e "${STY_GREEN}[$0]: cava installed${STY_RST}"
+    else
+      echo -e "${STY_YELLOW}[$0]: cava build failed, skipping${STY_RST}"
+    fi
+    cd "${REPO_ROOT}"
+    rm -rf "$CAVA_BUILD_DIR"
+  fi
 fi
 
 #####################################################################################
