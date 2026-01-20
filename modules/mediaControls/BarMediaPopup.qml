@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.modules.common
 import qs.modules.common.widgets
@@ -17,8 +16,8 @@ Item {
     signal closeRequested()
 
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-    readonly property var realPlayers: Mpris.players.values.filter(player => isRealPlayer(player))
-    readonly property var meaningfulPlayers: filterDuplicatePlayers(realPlayers)
+    // Use MprisController.players instead of duplicating filter logic
+    readonly property var meaningfulPlayers: filterDuplicatePlayers(MprisController.players)
     readonly property real widgetWidth: Appearance.sizes.mediaControlsWidth
     readonly property real widgetHeight: Appearance.sizes.mediaControlsHeight
     property real popupRounding: Appearance.rounding.normal
@@ -26,16 +25,6 @@ Item {
     // Cache to prevent flickering when popup is shown
     property var _playerCache: []
     property bool _cacheValid: false
-
-    property bool hasPlasmaIntegration: false
-    Process {
-        id: plasmaIntegrationAvailabilityCheckProc
-        running: true
-        command: ["/usr/bin/bash", "-c", "command -v plasma-browser-integration-host"]
-        onExited: (exitCode, exitStatus) => {
-            root.hasPlasmaIntegration = (exitCode === 0);
-        }
-    }
 
     // Update cache when players change
     onMeaningfulPlayersChanged: {
@@ -54,18 +43,6 @@ Item {
         onTriggered: {
             root._cacheValid = false;
         }
-    }
-
-    function isRealPlayer(player) {
-        if (!(Config.options?.media?.filterDuplicatePlayers ?? true)) {
-            return true;
-        }
-        return (
-            !(hasPlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.firefox')) &&
-            !(hasPlasmaIntegration && player.dbusName.startsWith('org.mpris.MediaPlayer2.chromium')) &&
-            !player.dbusName?.startsWith('org.mpris.MediaPlayer2.playerctld') &&
-            !(player.dbusName?.endsWith('.mpd') && !player.dbusName.endsWith('MediaPlayer2.mpd'))
-        );
     }
 
     function filterDuplicatePlayers(players) {

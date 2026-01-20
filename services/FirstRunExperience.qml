@@ -8,7 +8,7 @@ import QtQuick
 
 Singleton {
     id: root
-    property string firstRunFilePath: `${Directories.state}/user/first_run.txt`
+    property string firstRunFilePath: FileUtils.trimFileProtocol(`${Directories.state}/user/first_run.txt`)
     property string firstRunFileContent: "This file is just here to confirm you've been greeted :>"
     property string firstRunNotifSummary: "Welcome!"
     property string firstRunNotifBody: "Hit Super+/ for a list of keybinds"
