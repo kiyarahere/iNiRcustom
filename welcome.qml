@@ -545,11 +545,17 @@ Scope {
         Item { Layout.fillHeight: true }
     }
 
-    component ThemeContent: ColumnLayout {
+    component ThemeContent: Flickable {
+        id: themeFlickable
         width: 600
-        spacing: 20
-
-        Item { Layout.fillHeight: true; Layout.maximumHeight: 20 }
+        contentHeight: themeColumn.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        
+        ColumnLayout {
+            id: themeColumn
+            width: parent.width
+            spacing: 16
 
         // Light/Dark toggle
         RowLayout {
@@ -807,7 +813,8 @@ Scope {
             }
         }
 
-        Item { Layout.fillHeight: true }
+        Item { Layout.preferredHeight: 16 }
+        }
     }
 
     component LayoutContent: ColumnLayout {
