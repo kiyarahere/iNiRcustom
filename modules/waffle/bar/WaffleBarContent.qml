@@ -100,7 +100,6 @@ Rectangle {
         }
 
         StartButton {}
-        TaskViewButton {}
         WTaskbarSeparator { }
         Tasks {}
     }
